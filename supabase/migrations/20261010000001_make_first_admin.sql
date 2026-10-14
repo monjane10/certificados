@@ -1,0 +1,20 @@
+-- Procedimento CONTROLADO para criar o primeiro administrador.
+-- Executar manualmente no SQL Editor do Supabase como operador autorizado.
+-- NUNCA expor este fluxo no frontend nem aceitar role via registo público.
+--
+-- Pré-requisitos:
+--   1. O utilizador já se registou normalmente (recebeu role='user').
+--   2. Confirmaste a identidade do futuro admin por um canal externo.
+--
+-- Passo 1: localizar o utilizador
+-- select id, email, organization_name, role from public.profiles where email = 'admin@microlegal.co.mz';
+--
+-- Passo 2: promover a admin (operador autorizado apenas)
+-- update public.profiles set role = 'admin' where email = 'admin@microlegal.co.mz';
+--
+-- Passo 3: verificar
+-- select id, email, code, role from public.profiles where email = 'admin@microlegal.co.mz';
+--
+-- Alternativa (criar admin sem registo prévio): criar o utilizador no
+-- Dashboard Supabase > Authentication > Users e depois correr o UPDATE acima.
+-- A service_role key NUNCA deve ir para o frontend.

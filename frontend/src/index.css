@@ -1,0 +1,29 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: #f6f8fc;
+  color: #0f2357;
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.5s ease both;
+}
+
+@keyframes route-progress {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(300%); }
+}
+
+.animate-route-progress {
+  animation: route-progress 0.6s ease-in-out infinite;
+}

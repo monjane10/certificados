@@ -1,0 +1,137 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 260" fill="none" stroke="#11245C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+  <title>Formador a partilhar conhecimento com dois formandos</title>
+
+  <!-- Planta -->
+  <g stroke="#8EA9D8" stroke-width="1.4">
+    <path d="M232 236 C230 180 226 130 214 64" />
+    <path d="M236 236 C240 190 250 150 268 112" />
+    <path d="M228 200 C218 176 204 160 186 150" />
+    <g fill="#C6D7F1">
+      <path d="M214 64 C204 82 206 100 216 112 C224 96 222 78 214 64Z" />
+      <path d="M220 122 C206 120 196 110 192 96 C206 98 216 108 220 122Z" />
+      <path d="M222 140 C232 128 246 124 258 126 C250 138 236 144 222 140Z" />
+      <path d="M268 112 C266 96 272 84 284 78 C286 92 280 104 268 112Z" />
+      <path d="M252 150 C262 140 276 138 286 142 C278 152 264 156 252 150Z" />
+      <path d="M186 150 C190 136 200 130 212 130 C208 144 198 150 186 150Z" />
+      <path d="M210 176 C198 178 186 172 180 162 C194 160 204 166 210 176Z" />
+      <path d="M226 96 C222 84 226 72 234 66 C238 78 234 90 226 96Z" />
+    </g>
+  </g>
+
+  <!-- Certificado -->
+  <g>
+    <rect x="432" y="12" width="88" height="70" rx="2" fill="#FFFFFF" stroke-width="2" />
+    <rect x="439" y="19" width="74" height="56" rx="1" stroke="#8EA9D8" stroke-width="1.2" />
+    <path d="M452 32 H500 M458 42 H494 M456 50 H486" stroke="#8EA9D8" stroke-width="1.4" />
+    <circle cx="486" cy="60" r="7" fill="#C6D7F1" />
+    <path d="M482 66 L479 80 L486 76 L492 80 L490 66" fill="#11245C" />
+    <path d="M412 30 L420 36 M406 52 L416 53 M540 16 L528 30 M544 42 L532 46" stroke-width="1.6" />
+  </g>
+
+  <!-- Cadeira esquerda -->
+  <path d="M22 236 C14 200 16 168 30 150 C38 146 46 150 46 158 C40 182 40 210 46 236Z" fill="#DDE8F7" />
+
+  <!-- Formanda (esquerda) -->
+  <g>
+    <!-- cabelo atrás -->
+    <path d="M118 104 C98 108 92 130 98 150 C102 166 90 176 92 196 C94 214 84 226 74 232 C96 236 116 222 118 204 C120 190 128 182 126 166 Z" fill="#11245C" />
+    <!-- tronco -->
+    <path d="M100 236 C98 206 104 182 122 172 C134 166 150 166 162 172 C172 178 176 196 176 212 L176 236Z" fill="#FFFFFF" />
+    <path d="M132 170 C134 178 142 182 150 178" />
+    <!-- pescoço -->
+    <path d="M136 154 L136 168 M150 152 L150 166" />
+    <!-- cabeça -->
+    <path d="M124 122 C124 104 136 94 150 96 C164 98 170 112 168 128 C166 144 158 156 146 156 C132 156 124 140 124 122Z" fill="#FFFFFF" />
+    <path d="M162 124 L168 136 L163 138" stroke-width="1.5" />
+    <circle cx="157" cy="121" r="1.6" fill="#11245C" stroke="none" />
+    <path d="M152 114 C155 112 159 112 161 114" stroke-width="1.4" />
+    <path d="M156 145 C159 146 162 145 163 143" stroke-width="1.4" />
+    <!-- franja -->
+    <path d="M122 120 C118 100 132 86 150 88 C162 89 170 98 170 108 C160 104 146 104 138 110 C134 120 128 126 122 120Z" fill="#11245C" />
+    <!-- braço com mão no queixo -->
+    <path d="M164 236 C166 214 164 190 158 168 L170 166 C176 190 180 214 182 236Z" fill="#FFFFFF" />
+    <path d="M154 160 C154 152 162 148 168 152 C172 156 170 164 164 166 C158 168 154 166 154 160Z" fill="#FFFFFF" stroke-width="1.6" />
+  </g>
+
+  <!-- Portátil -->
+  <g>
+    <path d="M196 234 L214 178 L276 184 L262 234Z" fill="#11245C" />
+    <circle cx="238" cy="208" r="4" fill="#3E5C9E" stroke="none" />
+    <path d="M182 236 H272" stroke-width="2.4" />
+  </g>
+
+  <!-- Formador (centro) -->
+  <g>
+    <!-- pernas -->
+    <path d="M318 172 L314 236 H342 L344 196 L350 236 H376 L370 172Z" fill="#11245C" />
+    <!-- tronco/camisa -->
+    <path d="M306 88 C318 80 334 78 346 80 C360 80 376 84 386 92 C392 118 388 150 380 176 L312 178 C304 150 300 116 306 88Z" fill="#FFFFFF" />
+    <path d="M334 82 L344 100 L354 82" />
+    <path d="M344 100 L344 172" stroke-width="1.2" />
+    <circle cx="344" cy="116" r="1.2" fill="#11245C" stroke="none" />
+    <circle cx="344" cy="134" r="1.2" fill="#11245C" stroke="none" />
+    <path d="M362 108 H374" stroke-width="1.2" />
+    <!-- pescoço -->
+    <path d="M338 64 L338 80 M352 64 L352 80" />
+    <!-- cabeça -->
+    <path d="M326 46 C326 28 338 20 350 22 C364 24 370 36 368 52 C366 66 358 74 346 74 C334 74 326 62 326 46Z" fill="#FFFFFF" />
+    <path d="M366 44 L372 56 L366 58" stroke-width="1.5" />
+    <circle cx="359" cy="42" r="1.6" fill="#11245C" stroke="none" />
+    <path d="M354 36 C357 34 361 34 364 36" stroke-width="1.4" />
+    <path d="M354 62 C358 64 362 63 365 60" stroke-width="1.4" />
+    <path d="M330 48 C326 46 322 50 324 54 C326 58 330 58 332 56" fill="#FFFFFF" stroke-width="1.5" />
+    <!-- cabelo encaracolado -->
+    <path d="M324 44 C316 36 320 22 330 20 C330 10 344 4 352 10 C360 4 374 10 372 20 C380 26 376 38 368 38 C364 32 356 30 350 32 C344 28 338 32 336 38 C334 44 330 46 324 44Z" fill="#11245C" />
+    <!-- braço esquerdo + tablet -->
+    <path d="M306 92 C296 108 292 130 296 148 C300 158 314 158 328 150" fill="#FFFFFF" />
+    <path d="M300 116 C298 128 298 140 302 146" stroke-width="1.4" />
+    <g transform="rotate(12 344 140)">
+      <rect x="322" y="110" width="40" height="56" rx="4" fill="#11245C" />
+      <rect x="327" y="115" width="30" height="44" rx="2" fill="#3E5C9E" stroke="none" />
+    </g>
+    <path d="M326 146 C332 142 338 144 338 150 C336 156 328 158 322 154" fill="#FFFFFF" stroke-width="1.6" />
+    <!-- braço direito estendido -->
+    <path d="M384 92 C396 104 402 124 410 132 C416 128 424 120 432 114 L438 122 C428 134 418 146 408 150 C398 150 390 136 386 124" fill="#FFFFFF" />
+    <path d="M396 128 L406 122" stroke-width="1.3" />
+    <path d="M432 114 C438 108 444 106 450 104 M436 118 C444 114 450 112 456 112 M438 122 C444 122 450 122 454 124 M434 112 C434 106 436 102 440 100" stroke-width="1.6" />
+  </g>
+
+  <!-- Livros -->
+  <g>
+    <rect x="360" y="226" width="74" height="10" rx="2" fill="#11245C" />
+    <rect x="366" y="216" width="66" height="10" rx="2" fill="#FFFFFF" />
+    <path d="M374 221 H428" stroke="#8EA9D8" stroke-width="1.2" />
+    <rect x="356" y="206" width="70" height="10" rx="2" fill="#C6D7F1" />
+    <path d="M364 211 H420" stroke="#FFFFFF" stroke-width="1.2" />
+  </g>
+
+  <!-- Cadeira direita -->
+  <path d="M578 236 C586 206 586 178 576 158 C570 152 562 154 560 162 C564 186 564 212 558 236Z" fill="#DDE8F7" />
+
+  <!-- Formando (direita) -->
+  <g>
+    <!-- tronco -->
+    <path d="M498 236 C490 210 494 182 508 168 C520 158 540 158 552 168 C564 180 568 210 566 236Z" fill="#FFFFFF" />
+    <path d="M520 162 C524 170 532 172 538 166" />
+    <!-- pescoço -->
+    <path d="M520 146 L522 162 M534 146 L536 162" />
+    <!-- cabeça -->
+    <path d="M506 122 C506 106 518 98 530 100 C544 102 550 114 548 128 C546 142 538 150 526 150 C514 150 506 138 506 122Z" fill="#FFFFFF" />
+    <path d="M508 124 L501 132 L507 135" stroke-width="1.5" />
+    <circle cx="515" cy="119" r="6" stroke-width="1.4" />
+    <path d="M521 119 L528 118" stroke-width="1.3" />
+    <circle cx="514" cy="119" r="1.4" fill="#11245C" stroke="none" />
+    <path d="M510 142 C513 143 516 142 518 140" stroke-width="1.4" />
+    <!-- cabelo -->
+    <path d="M512 108 C506 98 512 86 522 86 C526 78 540 78 544 86 C554 86 560 96 556 106 C562 114 558 126 550 128 C548 118 542 110 534 108 C526 110 518 112 512 108Z" fill="#11245C" />
+    <!-- braço a escrever -->
+    <path d="M510 174 C496 188 484 208 478 226 C484 232 494 230 498 224 C504 210 512 196 520 186" fill="#FFFFFF" />
+    <path d="M478 226 C474 230 476 236 482 236 C488 236 492 232 490 228" fill="#FFFFFF" stroke-width="1.6" />
+    <path d="M470 236 L486 210" stroke-width="2.2" />
+    <path d="M440 236 L452 228 H492" stroke="#8EA9D8" stroke-width="1.4" />
+  </g>
+
+  <!-- Mesa -->
+  <rect x="58" y="236" width="532" height="8" rx="2" fill="#FFFFFF" />
+  <path d="M90 244 V260 M560 244 V260" />
+</svg>

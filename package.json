@@ -1,0 +1,16 @@
+{
+  "name": "microlegal-certificados",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Plataforma de Gestão e Emissão de Certificados Digitais - Microlegal (Sprint 1)",
+  "scripts": {
+    "dev": "concurrently --names backend,frontend --prefix-colors blue,green \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "dev:backend": "npm --prefix backend run dev",
+    "build": "npm --prefix backend run build && npm --prefix frontend run build",
+    "install:all": "npm install --prefix backend && npm install --prefix frontend"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.6"
+  }
+}
