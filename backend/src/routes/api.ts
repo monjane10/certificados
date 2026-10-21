@@ -1,8 +1,15 @@
 import { Router } from 'express';
 import { authenticate } from '../middlewares/auth.js';
 import { requireRole } from '../middlewares/requireRole.js';
-import { sensitiveLimiter } from '../middlewares/rateLimit.js';
+import { publicVerifyLimiter, sensitiveLimiter } from '../middlewares/rateLimit.js';
 import { validateBody } from '../middlewares/validate.js';
+import { annulCertificateSchema } from '../schemas/certificate.js';
+import {
+  getCertificates,
+  getPublicCertificate,
+  postAnnulCertificate,
+  postCourseCertificates,
+} from '../controllers/certificateController.js';
 import { updateProfileSchema } from '../schemas/profile.js';
 import { createCourseSchema, updateCourseSchema } from '../schemas/course.js';
 import {
@@ -57,5 +64,11 @@ router.get('/courses/:id/trainees', authenticate, getEnrollments);
 router.post('/courses/:id/trainees', sensitiveLimiter, authenticate, postEnrollment);
 router.patch('/enrollments/:matriculaId', sensitiveLimiter, authenticate, validateBody(updateEnrollmentSchema), patchEnrollmentById);
 router.delete('/enrollments/:matriculaId', sensitiveLimiter, authenticate, deleteEnrollmentById);
+
+// Certificados: emissão em lote por curso, anulação e verificação pública.
+router.get('/certificates', authenticate, getCertificates);
+router.post('/courses/:id/certificates', sensitiveLimiter, authenticate, postCourseCertificates);
+router.post('/certificates/:id/annul', sensitiveLimiter, authenticate, validateBody(annulCertificateSchema), postAnnulCertificate);
+router.get('/public/certificates/:codigo', publicVerifyLimiter, getPublicCertificate);
 
 export default router;

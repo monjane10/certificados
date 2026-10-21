@@ -17,6 +17,7 @@ export function CourseNewPage() {
       const course = await courseService.create({
         nome: values.nome.trim(),
         carga_horaria: values.carga_horaria,
+        tipo: values.tipo as Course['tipo'],
         data_abertura: values.data_abertura || undefined,
         data_encerramento: values.data_encerramento || undefined,
         status: values.status as Course['status'],

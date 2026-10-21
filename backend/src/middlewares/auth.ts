@@ -1,7 +1,5 @@
 import type { NextFunction, Request, Response } from 'express';
-import { createClient } from '@supabase/supabase-js';
-import { env } from '../config/env.js';
-import { supabaseAnon } from '../config/supabase.js';
+import { scopedClient, supabaseAnon } from '../config/supabase.js';
 
 export async function authenticate(req: Request, res: Response, next: NextFunction) {
   try {
@@ -20,13 +18,8 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
       res.status(401).json({ error: 'Sessão inválida ou expirada.' });
       return;
     }
-    // Cliente com escopo do utilizador: propaga o JWT para o RLS avaliar
-    // auth.uid() correctamente. Identidade vem SEMPRE do token validado.
-    const scoped = createClient(env.SUPABASE_URL, env.SUPABASE_PUBLISHABLE_KEY, {
-      global: { headers: { Authorization: `Bearer ${token}` } },
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
-    const { data: profile } = await scoped
+    // Identidade vem SEMPRE do token validado.
+    const { data: profile } = await scopedClient(token)
       .from('profiles')
       .select('id, code, email, phone, organization_name, role, created_at, updated_at')
       .eq('id', data.user.id)

@@ -1,13 +1,5 @@
-import { createClient } from '@supabase/supabase-js';
-import { env } from '../config/env.js';
+import { scopedClient } from '../config/supabase.js';
 import type { Profile } from '../types/index.js';
-
-function scopedClient(accessToken: string) {
-  return createClient(env.SUPABASE_URL, env.SUPABASE_PUBLISHABLE_KEY, {
-    global: { headers: { Authorization: `Bearer ${accessToken}` } },
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-}
 
 /** Lê o próprio perfil com RLS (auth.uid() = id). */
 export async function fetchOwnProfile(accessToken: string): Promise<Profile | null> {

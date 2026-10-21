@@ -4,6 +4,8 @@ import { z } from 'zod';
 const envSchema = z.object({
   PORT: z.coerce.number().int().positive().default(4000),
   CLIENT_ORIGIN: z.string().default('http://localhost:5173'),
+  // N.º de proxies à frente do servidor (0 em local; 1 atrás de Nginx/Render/Railway).
+  TRUST_PROXY: z.coerce.number().int().min(0).default(0),
   SUPABASE_URL: z.string().url({ message: 'SUPABASE_URL inválido' }),
   SUPABASE_PUBLISHABLE_KEY: z.string().min(1, 'SUPABASE_PUBLISHABLE_KEY em falta'),
   SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),

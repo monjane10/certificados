@@ -4,6 +4,7 @@ import {
   updateOwnProfileScoped,
   countProfilesScoped,
 } from '../services/profileService.js';
+import { countIssuedCertificates } from '../services/certificateService.js';
 
 function tokenOf(req: Request): string {
   return req.authToken ?? '';
@@ -40,13 +41,15 @@ export async function patchOwnProfile(req: Request, res: Response) {
 }
 
 export async function adminOverview(_req: Request, res: Response) {
-  // Sprint 1: sem estatísticas reais. Retorna zeros/estados vazios honestos.
-  // Conta total de perfis apenas para prova de autorização admin.
   try {
-    const total = await countProfilesScoped((_req as Request).authToken ?? '');
+    const token = _req.authToken ?? '';
+    const [total, certificates] = await Promise.all([
+      countProfilesScoped(token),
+      countIssuedCertificates(token),
+    ]);
     res.json({
       totalUsers: total,
-      certificatesIssued: 0,
+      certificatesIssued: certificates,
       pendingValidations: 0,
       note: 'Indicadores reais serão implementados nas próximas sprints.',
     });

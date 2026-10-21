@@ -69,8 +69,8 @@ const FEATURES = [
 ];
 
 const FAQS = [
-  ['Quando posso emitir certificados?', 'A emissão chega numa próxima fase. Por agora, crie a conta e prepare os dados da instituição.'],
-  ['Como se valida um certificado?', 'Pelo código único, na página de verificação. O QR code funcional chega depois.'],
+  ['Quando posso emitir certificados?', 'Quando o curso estiver concluído: com um clique emite os certificados de todos os formandos elegíveis (participação: todos; técnico-profissional: nota igual ou superior a 10).'],
+  ['Como se valida um certificado?', 'Pelo código único (CERT-…), na página de verificação. O QR code chega depois.'],
   ['Vou pagar alguma coisa?', 'Não. Os preços indicados (100 MT / 150 MT) são apenas referência comercial.'],
 ];
 

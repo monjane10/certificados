@@ -1,0 +1,87 @@
+import { FileBadge } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Button } from '../ui/Button';
+import { Card } from '../ui/Card';
+import { courseBlockReason, eligibilityOf } from '../../lib/certificates';
+import { NOTA_MINIMA_APROVACAO, type Course, type EnrollmentView } from '../../types';
+
+export function countEligibility(course: Course, enrollments: EnrollmentView[]) {
+  const counts = { emitido: 0, elegivel: 0, sem_nota: 0, reprovado: 0 };
+  for (const e of enrollments) counts[eligibilityOf(course, e)] += 1;
+  return counts;
+}
+
+/** Resumo e acção de emissão em lote (um clique para todos os elegíveis). */
+export function CertificatePanel({
+  course,
+  enrollments,
+  onEmit,
+}: {
+  course: Course;
+  enrollments: EnrollmentView[];
+  onEmit: () => void;
+}) {
+  const counts = countEligibility(course, enrollments);
+  const blocked = courseBlockReason(course);
+  const tecnico = course.tipo === 'tecnico_profissional';
+
+  return (
+    <Card>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h2 className="flex items-center gap-2 text-lg font-bold tracking-tight text-brand-950">
+            <FileBadge size={18} strokeWidth={1.8} aria-hidden /> Certificados
+          </h2>
+          <p className="mt-1 text-sm text-slate-500">
+            {tecnico
+              ? `Emitidos para os formandos com nota igual ou superior a ${NOTA_MINIMA_APROVACAO} valores.`
+              : 'Curso de participação: emitidos para todos os formandos matriculados.'}
+          </p>
+          <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm">
+            <div>
+              <dt className="text-xs text-slate-500">Emitidos</dt>
+              <dd className="font-bold tabular-nums text-brand-950">{counts.emitido}</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-slate-500">Prontos a emitir</dt>
+              <dd className="font-bold tabular-nums text-brand-950">{counts.elegivel}</dd>
+            </div>
+            {tecnico && (
+              <>
+                <div>
+                  <dt className="text-xs text-slate-500">Sem nota</dt>
+                  <dd className="font-bold tabular-nums text-amber-700">{counts.sem_nota}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-slate-500">Reprovados</dt>
+                  <dd className="font-bold tabular-nums text-red-700">{counts.reprovado}</dd>
+                </div>
+              </>
+            )}
+          </dl>
+        </div>
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:items-end">
+          <Button onClick={onEmit} disabled={Boolean(blocked) || counts.elegivel === 0} className="w-full sm:w-auto">
+            {counts.elegivel > 0 ? `Emitir ${counts.elegivel} certificado(s)` : 'Emitir certificados'}
+          </Button>
+          {counts.emitido > 0 && (
+            <Link to={`/app/certificados?curso=${course.id}`} className="text-center text-sm font-semibold text-brand-900 hover:underline">
+              Ver certificados emitidos
+            </Link>
+          )}
+        </div>
+      </div>
+      {blocked ? (
+        <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">{blocked}</p>
+      ) : counts.elegivel === 0 && enrollments.length > 0 ? (
+        <p className="mt-3 text-sm text-slate-500">
+          {counts.emitido === enrollments.length
+            ? 'Todos os formandos já têm certificado.'
+            : 'Nenhum formando cumpre os critérios para emissão neste momento.'}
+        </p>
+      ) : enrollments.length === 0 ? (
+        <p className="mt-3 text-sm text-slate-500">Matricule formandos para poder emitir certificados.</p>
+      ) : null}
+    </Card>
+  );
+}

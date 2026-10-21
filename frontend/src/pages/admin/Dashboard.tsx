@@ -8,14 +8,17 @@ import { Spinner } from '../../components/ui/Spinner';
 
 export function AdminDashboard() {
   const { profile } = useAuth();
-  const [stats, setStats] = useState<{ totalUsers: number } | null>(null);
+  const [stats, setStats] = useState<{ totalUsers: number; certificatesIssued: number } | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
       try {
         const data = await api.adminOverview();
-        setStats({ totalUsers: data.totalUsers ?? 0 });
+        setStats({
+          totalUsers: Number(data['totalUsers'] ?? 0),
+          certificatesIssued: Number(data['certificatesIssued'] ?? 0),
+        });
       } catch (e) {
         toast.error(e instanceof Error ? e.message : 'Falha ao carregar indicadores.');
       } finally {
@@ -34,7 +37,7 @@ export function AdminDashboard() {
       </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Total de utilizadores" value={String(stats?.totalUsers ?? 0)} hint="Via API protegida (role admin)" />
-        <StatCard label="Certificados emitidos" value="0" hint="Emissão chega nas próximas sprints" />
+        <StatCard label="Certificados emitidos" value={String(stats?.certificatesIssued ?? 0)} hint="Activos (não anulados)" />
         <StatCard label="Validações" value="0" hint="Verificação pública em preparação" />
         <StatCard label="Formações activas" value="0" hint="Módulo em preparação" />
       </div>

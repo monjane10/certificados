@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Button } from '../ui/Button';
-import type { EnrollmentView } from '../../types';
+import { NOTA_MINIMA_APROVACAO, type EnrollmentView } from '../../types';
 
 export function GradeModal({
   enrollment,
@@ -36,7 +36,8 @@ export function GradeModal({
     <div className="space-y-4">
       <p className="text-sm text-slate-600">
         Avaliação de <strong className="text-brand-950">{enrollment.nome}</strong> apenas neste
-        curso. Não afecta outros cursos onde esteja inscrito.
+        curso. Não afecta outros cursos onde esteja inscrito. Aprovação a partir de{' '}
+        {NOTA_MINIMA_APROVACAO} valores.
       </p>
       <div className="space-y-1.5">
         <label htmlFor="grade" className="block text-sm font-medium text-brand-950">

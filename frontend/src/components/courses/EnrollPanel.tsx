@@ -8,11 +8,14 @@ type Mode = 'novo' | 'existente';
 
 export function EnrollPanel({
   saving,
+  comNotas,
   onEnrollNew,
   onEnrollExisting,
   onCancel,
 }: {
   saving: boolean;
+  /** false em cursos de participação: sem campo de avaliação. */
+  comNotas: boolean;
   onEnrollNew: (v: TraineeFormValues) => void;
   onEnrollExisting: (t: Trainee) => void;
   onCancel: () => void;
@@ -68,7 +71,7 @@ export function EnrollPanel({
         <TraineeForm
           saving={saving}
           submitLabel="Criar e matricular"
-          withAvaliacao
+          withAvaliacao={comNotas}
           avaliacaoHint="Avaliação inicial neste curso (opcional; pode editar depois)."
           onSubmit={onEnrollNew}
           onCancel={onCancel}

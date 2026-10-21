@@ -61,8 +61,9 @@ export function CoursesPage() {
       const updated = await courseService.update(editing.id, {
         nome: values.nome.trim(),
         carga_horaria: values.carga_horaria,
-        data_abertura: values.data_abertura || undefined,
-        data_encerramento: values.data_encerramento || undefined,
+        tipo: values.tipo as Course['tipo'],
+        data_abertura: values.data_abertura || null,
+        data_encerramento: values.data_encerramento || null,
         status: values.status as Course['status'],
       });
       setCourses((prev) =>

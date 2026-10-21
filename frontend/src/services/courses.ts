@@ -1,38 +1,19 @@
-import { supabase } from '../lib/supabase';
+import { apiRequest as req } from '../lib/http';
 import type { Course, EnrollmentView, Trainee } from '../types';
-
-const API_URL =
-  (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '') ?? 'http://localhost:4000';
-
-async function authHeader(): Promise<Record<string, string>> {
-  const { data } = await supabase.auth.getSession();
-  const token = data.session?.access_token;
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
-
-async function handle(res: Response) {
-  const json = (await res.json().catch(() => ({}))) as { error?: string } & Record<string, unknown>;
-  if (!res.ok) {
-    throw new Error(json.error ?? `Erro ${res.status}`);
-  }
-  return json;
-}
-
-async function req(path: string, init?: RequestInit) {
-  const res = await fetch(`${API_URL}${path}`, {
-    ...init,
-    headers: { ...(init?.headers ?? {}), ...(await authHeader()) },
-  });
-  return handle(res);
-}
 
 export interface CourseInput {
   nome: string;
   carga_horaria: number;
+  tipo: Course['tipo'];
   data_abertura?: string;
   data_encerramento?: string;
   status: Course['status'];
 }
+
+export type CourseUpdate = Partial<Omit<CourseInput, 'data_abertura' | 'data_encerramento'>> & {
+  data_abertura?: string | null;
+  data_encerramento?: string | null;
+};
 
 export const courseService = {
   async list(): Promise<Course[]> {
@@ -47,19 +28,12 @@ export const courseService = {
     };
   },
   async create(payload: CourseInput): Promise<Course> {
-    const json = await req('/api/courses', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
+    const json = await req('/api/courses', { method: 'POST', body: payload });
     return json['course'] as Course;
   },
-  async update(id: string, patch: Partial<CourseInput>): Promise<Course> {
-    const json = await req(`/api/courses/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(patch),
-    });
+  /** null nas datas limpa o valor guardado. */
+  async update(id: string, patch: CourseUpdate): Promise<Course> {
+    const json = await req(`/api/courses/${id}`, { method: 'PATCH', body: patch });
     return json['course'] as Course;
   },
   async remove(id: string): Promise<{ removedMatriculas: number; removedOrphanFormandos: number }> {
@@ -86,38 +60,25 @@ export const traineeService = {
   },
   /** Cria novo formando e matricula-o no curso (409 se duplicado). */
   async enrollNew(courseId: string, payload: TraineeInput): Promise<EnrollmentView> {
-    const json = await req(`/api/courses/${courseId}/trainees`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
+    const json = await req(`/api/courses/${courseId}/trainees`, { method: 'POST', body: payload });
     return json['enrollment'] as EnrollmentView;
   },
   /** Matricula um formando já registado (409 se já matriculado). */
   async enrollExisting(courseId: string, formandoId: string): Promise<EnrollmentView> {
-    const json = await req(`/api/courses/${courseId}/trainees`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ formando_id: formandoId }),
-    });
+    const json = await req(`/api/courses/${courseId}/trainees`, { method: 'POST', body: { formando_id: formandoId } });
     return json['enrollment'] as EnrollmentView;
   },
-  /** Actualiza dados pessoais (reflecte-se em todos os cursos). */
-  async updatePersonal(id: string, patch: Partial<TraineeInput>): Promise<Trainee> {
-    const json = await req(`/api/trainees/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(patch),
-    });
+  /** Actualiza dados pessoais (reflecte-se em todos os cursos); null limpa o campo. */
+  async updatePersonal(
+    id: string,
+    patch: { nome?: string; email?: string | null; contacto?: string | null },
+  ): Promise<Trainee> {
+    const json = await req(`/api/trainees/${id}`, { method: 'PATCH', body: patch });
     return json['trainee'] as Trainee;
   },
   /** Actualiza a avaliação APENAS nesta matrícula/curso. */
   async updateGrade(matriculaId: string, avaliacao: number | null): Promise<EnrollmentView> {
-    const json = await req(`/api/enrollments/${matriculaId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ avaliacao }),
-    });
+    const json = await req(`/api/enrollments/${matriculaId}`, { method: 'PATCH', body: { avaliacao } });
     return json['enrollment'] as EnrollmentView;
   },
   /** Cancela a matrícula; o backend decide Caso A (remove formando) vs. B. */

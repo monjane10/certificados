@@ -8,6 +8,8 @@ import apiRoutes from './routes/api.js';
 export function createApp() {
   const app = express();
   app.disable('x-powered-by');
+  // Necessário para o rate limit usar o IP real do cliente atrás de proxy.
+  if (env.TRUST_PROXY > 0) app.set('trust proxy', env.TRUST_PROXY);
   app.use(helmet());
   app.use(
     cors({

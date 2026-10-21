@@ -6,6 +6,7 @@ import { ProtectedRoute } from './routes/ProtectedRoute';
 import { AdminRoutes, UserRoutes } from './routes/AppRoutes';
 import { HomePage } from './pages/public/Home';
 import { VerifyPage } from './pages/public/Verify';
+import { CertificateViewPage } from './pages/public/CertificateView';
 import { LoginPage } from './pages/auth/Login';
 import { RegisterPage } from './pages/auth/Register';
 import { ForbiddenPage, NotFoundPage } from './pages/Status';
@@ -25,6 +26,9 @@ export default function App() {
             <Route path="nao-autorizado" element={<ForbiddenPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>
+
+          {/* Certificado para impressão: sem navbar/rodapé. */}
+          <Route path="certificado/:codigo" element={<CertificateViewPage />} />
 
           {/* Privadas */}
           <Route element={<ProtectedRoute roles={['admin']} />}>

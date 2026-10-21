@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { StatCard, formatCount } from '../../components/ui/Card';
 import { courseService } from '../../services/courses';
+import { certificateService } from '../../services/certificates';
 import type { Course } from '../../types';
 import bannerIllustration from '../../assets/banner-illustration.svg';
 
@@ -87,6 +88,7 @@ function QuickLink({ to, icon: Icon, title, description }: { to: string; icon: L
 export function UserDashboard() {
   const [courses, setCourses] = useState<Course[] | null>(null);
   const [failed, setFailed] = useState(false);
+  const [certCount, setCertCount] = useState<number | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -98,6 +100,11 @@ export function UserDashboard() {
         if (mounted) setFailed(true);
       }
     })();
+    // Independente dos cursos: uma falha aqui não esconde o resto do painel.
+    certificateService
+      .list()
+      .then((certs) => mounted && setCertCount(certs.filter((c) => c.estado === 'emitido').length))
+      .catch(() => mounted && setCertCount(null));
     return () => {
       mounted = false;
     };
@@ -153,8 +160,8 @@ export function UserDashboard() {
         />
         <StatCard
           label="Certificados"
-          value={formatCount(0)}
-          hint="Emissão em próximas sprints"
+          value={formatCount(certCount)}
+          hint="Emitidos (não anulados)"
           icon={<FileBadge size={17} strokeWidth={1.6} />}
         />
       </div>

@@ -6,21 +6,24 @@ const nome = z
   .min(2, 'Nome do formando deve ter pelo menos 2 caracteres')
   .max(160, 'Nome demasiado longo');
 
-const emailField = z
+const emailBase = z
   .string()
   .trim()
   .max(160, 'Email demasiado longo')
-  .refine((s) => s === '' || /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(s), 'Email inválido')
-  .transform((s) => (s === '' ? undefined : s))
-  .optional();
+  .refine((s) => s === '' || /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(s), 'Email inválido');
 
-const contactoField = z
+const contactoBase = z
   .string()
   .trim()
   .max(30, 'Contacto inválido')
-  .refine((s) => s === '' || /^[+0-9][0-9\s-]{6,29}$/.test(s), 'Contacto inválido (ex.: +258 84 000 0000)')
-  .transform((s) => (s === '' ? undefined : s))
-  .optional();
+  .refine((s) => s === '' || /^[+0-9][0-9\s-]{6,29}$/.test(s), 'Contacto inválido (ex.: +258 84 000 0000)');
+
+const emailField = emailBase.transform((s) => (s === '' ? undefined : s)).optional();
+const contactoField = contactoBase.transform((s) => (s === '' ? undefined : s)).optional();
+
+/** No update, null ou '' limpam o campo. */
+const emailUpdateField = emailBase.transform((s) => (s === '' ? null : s)).nullable().optional();
+const contactoUpdateField = contactoBase.transform((s) => (s === '' ? null : s)).nullable().optional();
 
 const avaliacaoField = z
   .number({ invalid_type_error: 'Avaliação deve ser um número' })
@@ -37,7 +40,7 @@ export const traineePersonalSchema = z
   .strict();
 
 export const updateTraineePersonalSchema = z
-  .object({ nome: nome.optional(), email: emailField, contacto: contactoField })
+  .object({ nome: nome.optional(), email: emailUpdateField, contacto: contactoUpdateField })
   .strict()
   .refine((d) => d.nome !== undefined || d.email !== undefined || d.contacto !== undefined, {
     message: 'Nada para actualizar.',

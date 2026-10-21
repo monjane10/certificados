@@ -25,6 +25,7 @@ Preencher `.env`:
 |---|---|
 | `PORT` | Porta (ex.: `4000`) |
 | `CLIENT_ORIGIN` | Origem do frontend para CORS (ex.: `http://localhost:5173`) |
+| `TRUST_PROXY` | N.º de proxies à frente do servidor (`0` em local, `1` atrás de Nginx/Render/Railway) |
 | `SUPABASE_URL` | Mesmo projecto Supabase do frontend |
 | `SUPABASE_PUBLISHABLE_KEY` | Chave pública (validação de tokens) |
 | `SUPABASE_SERVICE_ROLE_KEY` | Opcional, só no servidor, para operações admin futuras |

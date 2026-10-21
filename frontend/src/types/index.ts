@@ -22,10 +22,28 @@ export const COURSE_STATUS_LABELS: Record<CourseStatus, string> = {
   cancelado: 'Cancelado',
 };
 
+export type CourseType = 'participacao' | 'tecnico_profissional';
+
+export const COURSE_TYPES: CourseType[] = ['participacao', 'tecnico_profissional'];
+
+export const COURSE_TYPE_LABELS: Record<CourseType, string> = {
+  participacao: 'Participação',
+  tecnico_profissional: 'Técnico-profissional',
+};
+
+export const COURSE_TYPE_DESCRIPTIONS: Record<CourseType, string> = {
+  participacao: 'Sem avaliação. Certificado de participação.',
+  tecnico_profissional: 'Nota de 0 a 20 por formando. Certificado com nota.',
+};
+
+/** Nota mínima (0-20) para aprovação em cursos técnico-profissionais. */
+export const NOTA_MINIMA_APROVACAO = 10;
+
 export interface Course {
   id: string;
   nome: string;
   carga_horaria: number;
+  tipo: CourseType;
   codigo: string;
   data_abertura: string | null;
   data_encerramento: string | null;
@@ -58,4 +76,43 @@ export interface EnrollmentView {
   contacto: string | null;
   avaliacao: number | null;
   matriculado_em: string;
+  /** Certificado activo (emitido) desta matrícula, se existir. */
+  certificado: { id: string; codigo: string } | null;
+}
+
+export type CertificateState = 'emitido' | 'anulado';
+
+/** Certificado com os dados copiados no momento da emissão. */
+export interface Certificate {
+  id: string;
+  codigo: string;
+  matricula_id: string | null;
+  curso_id: string;
+  formando_id: string;
+  tipo: CourseType;
+  formando_nome: string;
+  curso_nome: string;
+  carga_horaria: number;
+  data_abertura: string | null;
+  data_encerramento: string;
+  nota: number | null;
+  emissor_nome: string;
+  estado: CertificateState;
+  emitido_em: string;
+  anulado_em: string | null;
+  motivo_anulacao: string | null;
+}
+
+/** Dados devolvidos pela verificação pública. */
+export type PublicCertificate = Omit<
+  Certificate,
+  'id' | 'matricula_id' | 'curso_id' | 'formando_id' | 'motivo_anulacao'
+>;
+
+export interface EmissionSummary {
+  total: number;
+  emitidos: number;
+  jaEmitidos: number;
+  semNota: number;
+  reprovados: number;
 }

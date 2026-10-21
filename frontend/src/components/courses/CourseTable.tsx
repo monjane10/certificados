@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import type { Course } from '../../types';
 import { CourseStatusBadge } from './CourseStatusBadge';
+import { CourseTypeBadge } from './CourseTypeBadge';
 
 function fmtDate(d: string | null): string {
   if (!d) return '-';
@@ -44,6 +45,7 @@ export function CourseTable({
         <thead>
           <tr className="border-b border-line bg-soft/50 text-xs uppercase tracking-wide text-muted">
             <th className="px-4 py-3 font-semibold">Curso</th>
+            <th className="px-4 py-3 font-semibold">Tipo</th>
             <th className="px-4 py-3 font-semibold">Código</th>
             <th className="px-4 py-3 font-semibold">Carga</th>
             <th className="px-4 py-3 font-semibold">Período</th>
@@ -59,6 +61,9 @@ export function CourseTable({
                 <Link to={`/app/cursos/${c.id}`} className="hover:underline">
                   {c.nome}
                 </Link>
+              </td>
+              <td className="px-4 py-3">
+                <CourseTypeBadge tipo={c.tipo} />
               </td>
               <td className="px-4 py-3 font-mono text-xs text-slate-600">{c.codigo}</td>
               <td className="px-4 py-3 tabular-nums text-slate-600">{c.carga_horaria}h</td>
@@ -100,7 +105,10 @@ export function CourseCards({
               </Link>
               <p className="mt-0.5 font-mono text-xs text-muted">{c.codigo}</p>
             </div>
-            <CourseStatusBadge status={c.status} />
+            <div className="flex shrink-0 flex-col items-end gap-1">
+              <CourseStatusBadge status={c.status} />
+              <CourseTypeBadge tipo={c.tipo} />
+            </div>
           </div>
           <dl className="mt-3 grid grid-cols-3 gap-2 px-4 text-xs">
             <div>

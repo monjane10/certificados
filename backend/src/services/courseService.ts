@@ -1,6 +1,11 @@
-import { createClient } from '@supabase/supabase-js';
-import { env } from '../config/env.js';
-import type { Course, CourseWithCount, EnrollmentView, Trainee } from '../types/index.js';
+import { scopedClient } from '../config/supabase.js';
+import { DATES_INCOHERENT_MESSAGE, datesCoherent } from '../schemas/course.js';
+import type { Course, CourseType, CourseWithCount, EnrollmentView, Trainee } from '../types/index.js';
+
+const COURSE_COLUMNS =
+  'id, nome, carga_horaria, tipo, codigo, data_abertura, data_encerramento, status, user_id, created_at, updated_at';
+
+const NO_GRADES_MESSAGE = 'Cursos de participação não têm avaliação.';
 
 const ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 
@@ -12,13 +17,6 @@ export function generateCourseCode(): string {
   return code;
 }
 
-function scopedClient(accessToken: string) {
-  return createClient(env.SUPABASE_URL, env.SUPABASE_PUBLISHABLE_KEY, {
-    global: { headers: { Authorization: `Bearer ${accessToken}` } },
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-}
-
 export class HttpError extends Error {
   status: number;
   constructor(status: number, message: string) {
@@ -27,12 +25,20 @@ export class HttpError extends Error {
   }
 }
 
+/**
+ * Erros levantados pelas nossas funções/triggers SQL (RAISE EXCEPTION, código
+ * P0001) trazem uma mensagem pensada para o utilizador; os restantes não.
+ */
+export function dbError(error: { code?: string; message: string }, status: number, fallback: string) {
+  return new HttpError(status, error.code === 'P0001' ? error.message : fallback);
+}
+
 /** Verifica que o curso existe e pertence ao utilizador do token (RLS + check explícito). */
 export async function requireOwnedCourse(accessToken: string, userId: string, courseId: string) {
   const client = scopedClient(accessToken);
   const { data, error } = await client
     .from('cursos')
-    .select('id, nome, carga_horaria, codigo, data_abertura, data_encerramento, status, user_id, created_at, updated_at')
+    .select(COURSE_COLUMNS)
     .eq('id', courseId)
     .maybeSingle();
   if (error) throw new HttpError(500, 'Falha ao consultar o curso.');
@@ -46,7 +52,7 @@ export async function listCourses(accessToken: string, userId: string): Promise<
   const client = scopedClient(accessToken);
   const { data, error } = await client
     .from('cursos')
-    .select('id, nome, carga_horaria, codigo, data_abertura, data_encerramento, status, user_id, created_at, updated_at, matriculas(count)')
+    .select(`${COURSE_COLUMNS}, matriculas(count)`)
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
   if (error) throw new HttpError(500, 'Falha ao listar cursos.');
@@ -61,8 +67,9 @@ export async function listCourses(accessToken: string, userId: string): Promise<
 export interface CoursePayload {
   nome: string;
   carga_horaria: number;
-  data_abertura?: string;
-  data_encerramento?: string;
+  tipo: CourseType;
+  data_abertura?: string | null;
+  data_encerramento?: string | null;
   status: string;
 }
 
@@ -74,13 +81,14 @@ export async function insertCourse(accessToken: string, userId: string, payload:
       .insert({
         nome: payload.nome,
         carga_horaria: payload.carga_horaria,
+        tipo: payload.tipo,
         codigo: generateCourseCode(),
         data_abertura: payload.data_abertura ?? null,
         data_encerramento: payload.data_encerramento ?? null,
         status: payload.status,
         user_id: userId,
       })
-      .select('id, nome, carga_horaria, codigo, data_abertura, data_encerramento, status, user_id, created_at, updated_at')
+      .select(COURSE_COLUMNS)
       .maybeSingle();
     if (!error && data) return data as Course;
     // Colisão de código (unique) -> tenta outro; outro erro -> propaga.
@@ -96,11 +104,33 @@ export async function patchCourse(
   courseId: string,
   patch: Partial<CoursePayload>,
 ): Promise<Course> {
-  await requireOwnedCourse(accessToken, userId, courseId);
+  const current = await requireOwnedCourse(accessToken, userId, courseId);
+  // Coerência das datas com os valores já guardados (o schema só compara as enviadas).
+  const effective = {
+    data_abertura: patch.data_abertura !== undefined ? patch.data_abertura : current.data_abertura,
+    data_encerramento: patch.data_encerramento !== undefined ? patch.data_encerramento : current.data_encerramento,
+  };
+  if (!datesCoherent(effective)) throw new HttpError(400, DATES_INCOHERENT_MESSAGE);
   const client = scopedClient(accessToken);
+  // Só passa a participação sem notas lançadas (a BD também o garante).
+  if (patch.tipo === 'participacao' && current.tipo !== 'participacao') {
+    const { count, error: countError } = await client
+      .from('matriculas')
+      .select('id', { count: 'exact', head: true })
+      .eq('curso_id', courseId)
+      .not('avaliacao', 'is', null);
+    if (countError) throw new HttpError(500, 'Falha ao verificar as notas do curso.');
+    if ((count ?? 0) > 0) {
+      throw new HttpError(
+        409,
+        `Não é possível mudar para curso de participação: existem ${count} nota(s) lançada(s). Remova-as primeiro.`,
+      );
+    }
+  }
   const body: Record<string, unknown> = {};
   if (patch.nome !== undefined) body['nome'] = patch.nome;
   if (patch.carga_horaria !== undefined) body['carga_horaria'] = patch.carga_horaria;
+  if (patch.tipo !== undefined) body['tipo'] = patch.tipo;
   if (patch.data_abertura !== undefined) body['data_abertura'] = patch.data_abertura ?? null;
   if (patch.data_encerramento !== undefined) body['data_encerramento'] = patch.data_encerramento ?? null;
   if (patch.status !== undefined) body['status'] = patch.status;
@@ -109,9 +139,9 @@ export async function patchCourse(
     .update(body)
     .eq('id', courseId)
     .eq('user_id', userId)
-    .select('id, nome, carga_horaria, codigo, data_abertura, data_encerramento, status, user_id, created_at, updated_at')
+    .select(COURSE_COLUMNS)
     .maybeSingle();
-  if (error) throw new HttpError(400, 'Não foi possível actualizar o curso.');
+  if (error) throw dbError(error, 409, 'Não foi possível actualizar o curso.');
   if (!data) throw new HttpError(404, 'Curso não encontrado.');
   return data as Course;
 }
@@ -129,7 +159,7 @@ export async function removeCourse(
   await requireOwnedCourse(accessToken, userId, courseId);
   const client = scopedClient(accessToken);
   const { data, error } = await client.rpc('remover_curso', { p_curso_id: courseId });
-  if (error) throw new HttpError(400, 'Não foi possível excluir o curso.');
+  if (error) throw dbError(error, 409, 'Não foi possível excluir o curso.');
   const result = data as { removed_matriculas?: number; removed_orphan_formandos?: number } | null;
   return {
     removedMatriculas: result?.removed_matriculas ?? 0,
@@ -176,8 +206,8 @@ export async function listTrainees(accessToken: string, userId: string, q?: stri
 
 export interface TraineePayload {
   nome: string;
-  email?: string;
-  contacto?: string;
+  email?: string | null;
+  contacto?: string | null;
 }
 
 export async function insertTrainee(
@@ -226,7 +256,7 @@ export async function patchTrainee(
 // --- Matrículas (ligação N:N + avaliação por curso) ----------------------------
 
 const ENROLL_VIEW =
-  'id, formando_id, curso_id, avaliacao, created_at, formandos!inner(id, nome, email, contacto)';
+  'id, formando_id, curso_id, avaliacao, created_at, formandos!inner(id, nome, email, contacto), certificados(id, codigo, estado)';
 
 interface EnrollmentRow {
   id: string;
@@ -235,9 +265,11 @@ interface EnrollmentRow {
   avaliacao: number | null;
   created_at: string;
   formandos: { id: string; nome: string; email: string | null; contacto: string | null };
+  certificados?: Array<{ id: string; codigo: string; estado: string }>;
 }
 
 function toView(row: EnrollmentRow): EnrollmentView {
+  const activo = (row.certificados ?? []).find((c) => c.estado === 'emitido');
   return {
     matricula_id: row.id,
     formando_id: row.formando_id,
@@ -247,6 +279,7 @@ function toView(row: EnrollmentRow): EnrollmentView {
     contacto: row.formandos.contacto,
     avaliacao: row.avaliacao,
     matriculado_em: row.created_at,
+    certificado: activo ? { id: activo.id, codigo: activo.codigo } : null,
   };
 }
 
@@ -298,7 +331,10 @@ export async function enrollNew(
   courseId: string,
   payload: TraineePayload & { avaliacao?: number | null },
 ): Promise<EnrollmentView> {
-  await requireOwnedCourse(accessToken, userId, courseId);
+  const course = await requireOwnedCourse(accessToken, userId, courseId);
+  if (course.tipo === 'participacao' && payload.avaliacao != null) {
+    throw new HttpError(400, NO_GRADES_MESSAGE);
+  }
   const trainee = await insertTrainee(accessToken, userId, payload);
   const client = scopedClient(accessToken);
   const { data, error } = await client
@@ -322,12 +358,17 @@ async function requireOwnedEnrollment(accessToken: string, userId: string, matri
   const client = scopedClient(accessToken);
   const { data, error } = await client
     .from('matriculas')
-    .select('id, formando_id, curso_id, cursos!inner(id, user_id)')
+    .select('id, formando_id, curso_id, cursos!inner(id, user_id, tipo)')
     .eq('id', matriculaId)
     .maybeSingle();
   if (error) throw new HttpError(500, 'Falha ao consultar a matrícula.');
   if (!data) throw new HttpError(404, 'Matrícula não encontrada.');
-  const row = data as unknown as { id: string; formando_id: string; curso_id: string; cursos: { user_id: string } };
+  const row = data as unknown as {
+    id: string;
+    formando_id: string;
+    curso_id: string;
+    cursos: { user_id: string; tipo: CourseType };
+  };
   if (!row.cursos || row.cursos.user_id !== userId) throw new HttpError(404, 'Matrícula não encontrada.');
   return row;
 }
@@ -339,7 +380,10 @@ export async function patchEnrollment(
   matriculaId: string,
   avaliacao: number | null,
 ): Promise<EnrollmentView> {
-  await requireOwnedEnrollment(accessToken, userId, matriculaId);
+  const enrollment = await requireOwnedEnrollment(accessToken, userId, matriculaId);
+  if (enrollment.cursos.tipo === 'participacao' && avaliacao !== null) {
+    throw new HttpError(400, NO_GRADES_MESSAGE);
+  }
   const client = scopedClient(accessToken);
   const { data, error } = await client
     .from('matriculas')
@@ -347,7 +391,8 @@ export async function patchEnrollment(
     .eq('id', matriculaId)
     .select(ENROLL_VIEW)
     .maybeSingle();
-  if (error || !data) throw new HttpError(400, 'Não foi possível actualizar a avaliação.');
+  if (error) throw dbError(error, 409, 'Não foi possível actualizar a avaliação.');
+  if (!data) throw new HttpError(400, 'Não foi possível actualizar a avaliação.');
   return toView(data as unknown as EnrollmentRow);
 }
 
@@ -364,7 +409,7 @@ export async function removeEnrollment(
   await requireOwnedEnrollment(accessToken, userId, matriculaId);
   const client = scopedClient(accessToken);
   const { data, error } = await client.rpc('remover_matricula', { p_matricula_id: matriculaId });
-  if (error) throw new HttpError(400, 'Não foi possível excluir a matrícula.');
+  if (error) throw dbError(error, 409, 'Não foi possível excluir a matrícula.');
   const result = data as { removed_formando?: boolean; remaining_courses?: number } | null;
   return {
     removedFormando: result?.removed_formando ?? false,

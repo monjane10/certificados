@@ -10,11 +10,14 @@ import { TraineeTable } from '../../components/courses/TraineeTable';
 import { GradeModal } from '../../components/courses/GradeModal';
 import { EnrollPanel } from '../../components/courses/EnrollPanel';
 import { CourseStatusBadge } from '../../components/courses/CourseStatusBadge';
+import { CourseTypeBadge } from '../../components/courses/CourseTypeBadge';
+import { CertificatePanel, countEligibility } from '../../components/courses/CertificatePanel';
+import { certificateService } from '../../services/certificates';
 import { ConfirmDialog } from '../../components/courses/ConfirmDialog';
 import { Modal } from '../../components/courses/Modal';
 import { ErrorState, LoadingState } from '../../components/courses/States';
 import { courseService, traineeService } from '../../services/courses';
-import type { Course, EnrollmentView, Trainee } from '../../types';
+import { NOTA_MINIMA_APROVACAO, type Course, type EnrollmentView, type Trainee } from '../../types';
 
 function fmtDate(d: string | null): string {
   if (!d) return '-';
@@ -44,6 +47,8 @@ export function CourseDetailPage() {
   const [confirmDeleteCourse, setConfirmDeleteCourse] = useState(false);
   const [saving, setSaving] = useState(false);
   const [removing, setRemoving] = useState(false);
+  const [confirmEmit, setConfirmEmit] = useState(false);
+  const [emitting, setEmitting] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -93,7 +98,7 @@ export function CourseDetailPage() {
         nome: values.nome,
         email: values.email || undefined,
         contacto: values.contacto || undefined,
-        avaliacao: values.avaliacao ?? null,
+        avaliacao: course?.tipo === 'participacao' ? null : (values.avaliacao ?? null),
       });
       setEnrollments((prev) => [created, ...prev]);
       bumpTotal(1);
@@ -128,8 +133,8 @@ export function CourseDetailPage() {
     try {
       const updated = await traineeService.updatePersonal(editingPersonal.formando_id, {
         nome: values.nome,
-        email: values.email || undefined,
-        contacto: values.contacto || undefined,
+        email: values.email || null,
+        contacto: values.contacto || null,
       });
       setEnrollments((prev) =>
         prev.map((e) =>
@@ -191,8 +196,9 @@ export function CourseDetailPage() {
       const updated = await courseService.update(id, {
         nome: values.nome.trim(),
         carga_horaria: values.carga_horaria,
-        data_abertura: values.data_abertura || undefined,
-        data_encerramento: values.data_encerramento || undefined,
+        tipo: values.tipo as Course['tipo'],
+        data_abertura: values.data_abertura || null,
+        data_encerramento: values.data_encerramento || null,
         status: values.status as Course['status'],
       });
       setCourse((prev) => (prev ? { ...updated, total_formandos: prev.total_formandos } : updated));
@@ -202,6 +208,27 @@ export function CourseDetailPage() {
       toast.error(e instanceof Error ? e.message : 'Falha ao actualizar o curso.');
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleEmit() {
+    if (emitting) return;
+    setEmitting(true);
+    try {
+      const s = await certificateService.emitForCourse(id);
+      const fora = [
+        s.semNota > 0 ? `${s.semNota} sem nota` : null,
+        s.reprovados > 0 ? `${s.reprovados} reprovado(s)` : null,
+      ].filter(Boolean);
+      toast.success(
+        `${s.emitidos} certificado(s) emitido(s).` + (fora.length ? ` Ficaram de fora: ${fora.join(', ')}.` : ''),
+      );
+      setConfirmEmit(false);
+      await load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Falha ao emitir os certificados.');
+    } finally {
+      setEmitting(false);
     }
   }
 
@@ -234,6 +261,16 @@ export function CourseDetailPage() {
       </div>
     );
 
+  const comNotas = course.tipo === 'tecnico_profissional';
+  const elig = countEligibility(course, enrollments);
+  const emitDescription = comNotas
+    ? `Serão emitidos ${elig.elegivel} certificado(s) técnico-profissional(is) para os formandos com nota igual ou superior a ${NOTA_MINIMA_APROVACAO}.` +
+      (elig.sem_nota + elig.reprovado > 0
+        ? ` Ficam de fora ${elig.sem_nota} sem nota e ${elig.reprovado} reprovado(s).`
+        : '') +
+      ' Depois de emitido, a nota do formando fica bloqueada (para alterar é preciso anular o certificado).'
+    : `Serão emitidos ${elig.elegivel} certificado(s) de participação, um para cada formando matriculado que ainda não o tem.`;
+
   return (
     <div className="space-y-6">
       <Link to="/app/cursos" className="text-sm font-semibold text-brand-900 hover:underline">
@@ -246,6 +283,7 @@ export function CourseDetailPage() {
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="break-words text-xl font-extrabold tracking-tight text-brand-950 sm:text-2xl">{course.nome}</h1>
               <CourseStatusBadge status={course.status} />
+              <CourseTypeBadge tipo={course.tipo} />
             </div>
             <p className="mt-2 text-sm text-slate-500">
               {course.codigo} · {course.carga_horaria}h · {enrollments.length} formando(s)
@@ -265,10 +303,17 @@ export function CourseDetailPage() {
         </div>
       </Card>
 
+      <CertificatePanel course={course} enrollments={enrollments} onEmit={() => setConfirmEmit(true)} />
+
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 className="text-lg font-bold tracking-tight text-brand-950">Formandos</h2>
-          <p className="mt-0.5 text-sm text-slate-500">Matriculados no curso «{course.nome}».</p>
+          <p className="mt-0.5 text-sm text-slate-500">
+            Matriculados no curso «{course.nome}».{' '}
+            {comNotas
+              ? `Aprovação a partir de ${NOTA_MINIMA_APROVACAO} valores.`
+              : 'Curso de participação: sem avaliação.'}
+          </p>
         </div>
         <Button onClick={() => setShowEnroll(true)} className="w-full sm:w-auto">
           Registar formando
@@ -300,6 +345,7 @@ export function CourseDetailPage() {
       ) : (
         <TraineeTable
           enrollments={filtered}
+          comNotas={comNotas}
           onEditPersonal={setEditingPersonal}
           onEditGrade={setEditingGrade}
           onDelete={setDeleting}
@@ -309,6 +355,7 @@ export function CourseDetailPage() {
       <Modal open={showEnroll} title={`Registar formando em ${course.nome}`} onClose={() => (saving ? null : setShowEnroll(false))}>
         <EnrollPanel
           saving={saving}
+          comNotas={comNotas}
           onEnrollNew={handleEnrollNew}
           onEnrollExisting={handleEnrollExisting}
           onCancel={() => setShowEnroll(false)}
@@ -356,6 +403,17 @@ export function CourseDetailPage() {
         loading={removing}
         onConfirm={handleUnenroll}
         onCancel={() => (removing ? null : setDeleting(null))}
+      />
+
+      <ConfirmDialog
+        open={confirmEmit}
+        title="Emitir certificados"
+        description={emitDescription}
+        confirmLabel={`Emitir ${elig.elegivel} certificado(s)`}
+        danger={false}
+        loading={emitting}
+        onConfirm={handleEmit}
+        onCancel={() => (emitting ? null : setConfirmEmit(false))}
       />
 
       <ConfirmDialog

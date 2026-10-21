@@ -107,6 +107,7 @@ Preencher:
 | `frontend/.env` | `VITE_API_URL` | URL do backend (ex.: `http://localhost:4000`) |
 | `backend/.env` | `PORT` | Porta do backend (ex.: `4000`) |
 | `backend/.env` | `CLIENT_ORIGIN` | Origem do frontend para CORS |
+| `backend/.env` | `TRUST_PROXY` | N.º de proxies à frente do servidor (`0` em local, `1` atrás de Nginx/Render/Railway) |
 | `backend/.env` | `SUPABASE_URL` | Mesmo projecto Supabase |
 | `backend/.env` | `SUPABASE_PUBLISHABLE_KEY` | Chave pública (validação de tokens) |
 | `backend/.env` | `SUPABASE_SERVICE_ROLE_KEY` | Opcional, só no servidor, para operações admin futuras |
@@ -166,6 +167,35 @@ Preencher:
       remove o formando; Caso B: preserva) e `remover_curso(uuid)` (remove
       matrículas, preserva formandos com outros cursos, limpa só órfãos do
       dono), ambas com verificação de propriedade interna.
+8. Aplicar a migração `20261021000000_correcoes_seguranca.sql` (DEPOIS da
+   anterior). Corrige:
+    - `remover_curso`/`remover_matricula`: retira o `EXECUTE` de `PUBLIC`
+      (só `authenticated` executa), exige sessão e compara a propriedade de
+      forma NULL-safe;
+    - `protect_profile_role`: permite ao operador (SQL Editor / service_role,
+      sem utilizador no JWT) promover o primeiro admin.
+9. Aplicar a migração `20261021000001_tipo_curso.sql` (DEPOIS da anterior).
+   Acrescenta `cursos.tipo` (obrigatório):
+    - `participacao`: sem notas; certificado de participação (todos os
+      matriculados);
+    - `tecnico_profissional`: nota 0–20 por matrícula; aprovação a partir de
+      10 valores (`NOTA_MINIMA_APROVACAO` no frontend);
+    - cursos existentes ficam como `tecnico_profissional`;
+    - triggers: recusa notas em matrículas de cursos de participação e só
+      permite mudar um curso para participação se não houver notas lançadas.
+10. Aplicar a migração `20261021000002_certificados.sql` (DEPOIS da
+    anterior). Cria a tabela `public.certificados` e:
+    - `emitir_certificados(curso)`: emissão em lote, num clique, para o curso
+      **concluído** e com **data de encerramento**. Participação → todos os
+      matriculados; técnico-profissional → nota ≥ `nota_minima_aprovacao()`
+      (10). Um certificado activo por matrícula; reemitir não duplica;
+    - cada certificado guarda uma cópia dos dados (nome, curso, nota,
+      instituição) e um código `CERT-XXXXXXXX`;
+    - `anular_certificado(id, motivo)`: certificados não se apagam, anulam-se;
+    - `verificar_certificado(codigo)`: verificação pública (anon);
+    - bloqueios enquanto houver certificado activo: alterar a nota, remover a
+      matrícula/formando/curso, mudar o tipo do curso;
+    - escrita na tabela apenas pelas funções (sem INSERT/UPDATE directos).
 
 ## Execução
 

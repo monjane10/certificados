@@ -17,10 +17,13 @@ export interface AuthContextUser {
 
 export type CourseStatus = 'planeado' | 'em_andamento' | 'concluido' | 'cancelado';
 
+export type CourseType = 'participacao' | 'tecnico_profissional';
+
 export interface Course {
   id: string;
   nome: string;
   carga_horaria: number;
+  tipo: CourseType;
   codigo: string;
   data_abertura: string | null;
   data_encerramento: string | null;
@@ -65,4 +68,54 @@ export interface EnrollmentView {
   contacto: string | null;
   avaliacao: number | null;
   matriculado_em: string;
+  /** Certificado activo (emitido) desta matrícula, se existir. */
+  certificado: { id: string; codigo: string } | null;
+}
+
+export type CertificateState = 'emitido' | 'anulado';
+
+/** Certificado com snapshot dos dados no momento da emissão. */
+export interface Certificate {
+  id: string;
+  codigo: string;
+  matricula_id: string | null;
+  curso_id: string;
+  formando_id: string;
+  tipo: CourseType;
+  formando_nome: string;
+  curso_nome: string;
+  carga_horaria: number;
+  data_abertura: string | null;
+  data_encerramento: string;
+  nota: number | null;
+  emissor_nome: string;
+  estado: CertificateState;
+  emitido_em: string;
+  anulado_em: string | null;
+  motivo_anulacao: string | null;
+}
+
+/** Dados públicos devolvidos pela verificação (sem ids internos). */
+export type PublicCertificate = Pick<
+  Certificate,
+  | 'codigo'
+  | 'tipo'
+  | 'formando_nome'
+  | 'curso_nome'
+  | 'carga_horaria'
+  | 'data_abertura'
+  | 'data_encerramento'
+  | 'nota'
+  | 'emissor_nome'
+  | 'estado'
+  | 'emitido_em'
+  | 'anulado_em'
+>;
+
+export interface EmissionSummary {
+  total: number;
+  emitidos: number;
+  jaEmitidos: number;
+  semNota: number;
+  reprovados: number;
 }
