@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react';
+import { brandingUrl } from '../../lib/branding';
 import type { PublicCertificate } from '../../types';
 
 /** Tamanho de desenho de todos os modelos: A4 horizontal a 96 dpi (297 x 210 mm). */
@@ -48,6 +50,38 @@ export function CertificateBody({ cert, strongClass = '' }: TemplateProps & { st
         '.'
       )}
     </>
+  );
+}
+
+/** Quem assina: o responsável do perfil ou, na falta, a instituição. */
+export function signer(cert: PublicCertificate) {
+  return {
+    nome: cert.responsavel_nome || cert.emissor_nome,
+    cargo: cert.responsavel_cargo || 'Coordenação',
+  };
+}
+
+/** Logótipo da instituição; sem logótipo devolve `fallback` (ex.: iniciais). */
+export function Logo({ cert, className = '', fallback = null }: TemplateProps & { className?: string; fallback?: ReactNode }) {
+  const url = brandingUrl(cert.logo_path);
+  if (!url) return <>{fallback}</>;
+  return <img src={url} alt={`Logótipo de ${cert.emissor_nome}`} className={`object-contain ${className}`} />;
+}
+
+/**
+ * Assinatura digitalizada, posicionada por cima da linha de assinatura (o
+ * contentor pai deve ser `relative` e começar na linha). Sem imagem não ocupa espaço.
+ */
+export function SignatureImage({ cert, height = 72 }: TemplateProps & { height?: number }) {
+  const url = brandingUrl(cert.assinatura_path);
+  if (!url) return null;
+  return (
+    <img
+      src={url}
+      alt="Assinatura"
+      className="pointer-events-none absolute bottom-full left-1/2 max-w-[115%] -translate-x-1/2 object-contain"
+      style={{ height, marginBottom: -Math.round(height * 0.18) }}
+    />
   );
 }
 

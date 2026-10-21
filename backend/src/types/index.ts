@@ -5,6 +5,10 @@ export interface Profile {
   phone: string | null;
   organization_name: string;
   role: 'admin' | 'user';
+  logo_path: string | null;
+  assinatura_path: string | null;
+  responsavel_nome: string | null;
+  responsavel_cargo: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -93,6 +97,10 @@ export interface Certificate {
   data_encerramento: string;
   nota: number | null;
   emissor_nome: string;
+  logo_path: string | null;
+  assinatura_path: string | null;
+  responsavel_nome: string | null;
+  responsavel_cargo: string | null;
   estado: CertificateState;
   emitido_em: string;
   anulado_em: string | null;
@@ -112,6 +120,10 @@ export type PublicCertificate = Pick<
   | 'data_encerramento'
   | 'nota'
   | 'emissor_nome'
+  | 'logo_path'
+  | 'assinatura_path'
+  | 'responsavel_nome'
+  | 'responsavel_cargo'
   | 'estado'
   | 'emitido_em'
   | 'anulado_em'

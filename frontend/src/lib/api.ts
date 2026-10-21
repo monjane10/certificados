@@ -7,7 +7,14 @@ export const api = {
   getProfile() {
     return apiRequest('/api/profile');
   },
-  updateProfile(patch: { organization_name?: string; phone?: string }) {
+  updateProfile(patch: {
+    organization_name?: string;
+    phone?: string;
+    logo_path?: string | null;
+    assinatura_path?: string | null;
+    responsavel_nome?: string | null;
+    responsavel_cargo?: string | null;
+  }) {
     return apiRequest('/api/profile', { method: 'PATCH', body: patch });
   },
   adminOverview() {

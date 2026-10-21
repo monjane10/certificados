@@ -1,11 +1,23 @@
 import { useId } from 'react';
-import { CANVAS_H, CANVAS_W, CertificateBody, certificateText, fitFontSize, initials, type TemplateProps } from '../shared';
+import {
+  CANVAS_H,
+  CANVAS_W,
+  CertificateBody,
+  Logo,
+  SignatureImage,
+  certificateText,
+  fitFontSize,
+  initials,
+  signer,
+  type TemplateProps,
+} from '../shared';
 
 const PURPLE = '#4C2A85';
 
 /** Violeta Moderno: fundo branco, ondas em degradê violeta/azul, bloco de marca. */
 export function VioletaTemplate({ cert }: TemplateProps) {
   const t = certificateText(cert);
+  const s = signer(cert);
   // Ids únicos: vários modelos podem estar no ecrã ao mesmo tempo (escolha de modelo).
   const uid = useId().replace(/:/g, '');
   const a = `vl-a-${uid}`;
@@ -46,9 +58,15 @@ export function VioletaTemplate({ cert }: TemplateProps) {
 
       {/* Bloco de marca (iniciais da instituição) */}
       <div className="absolute left-[110px] top-[64px] flex items-center gap-3">
-        <span className="flex h-[78px] w-[78px] items-center justify-center text-[24px] font-bold text-white" style={{ background: PURPLE }}>
-          {initials(cert.emissor_nome)}
-        </span>
+        <Logo
+          cert={cert}
+          className="h-[78px] max-w-[180px]"
+          fallback={
+            <span className="flex h-[78px] w-[78px] items-center justify-center text-[24px] font-bold text-white" style={{ background: PURPLE }}>
+              {initials(cert.emissor_nome)}
+            </span>
+          }
+        />
         <div className="max-w-[420px]">
           <p className="text-[12px] uppercase tracking-wider text-slate-500">Instituição</p>
           <p className="text-[22px] font-semibold leading-tight">{cert.emissor_nome}</p>
@@ -73,18 +91,20 @@ export function VioletaTemplate({ cert }: TemplateProps) {
         </p>
       </div>
 
-      <div className="absolute bottom-[78px] left-[230px] w-[240px] text-center">
-        <p className="text-[16px] font-medium">{t.dataEmissao}</p>
-        <div className="mt-1 h-px w-full bg-slate-400" />
-        <p className="mt-1.5 text-[13px] uppercase tracking-widest text-slate-500">Data</p>
+      {/* Data e assinatura: linhas à mesma altura, texto por baixo. */}
+      <div className="absolute left-[230px] top-[668px] w-[240px] text-center">
+        <div className="h-px w-full bg-slate-400" />
+        <p className="mt-2 text-[15px] font-medium leading-tight">{t.dataEmissao}</p>
+        <p className="mt-1 text-[12px] uppercase tracking-widest text-slate-500">Data</p>
       </div>
-      <div className="absolute bottom-[78px] right-[200px] w-[280px] text-center">
-        <p className="text-[15px] font-medium leading-tight">{cert.emissor_nome}</p>
-        <div className="mt-1 h-px w-full bg-slate-400" />
-        <p className="mt-1.5 text-[13px] uppercase tracking-widest text-slate-500">Assinatura</p>
+      <div className="absolute right-[200px] top-[668px] w-[280px] text-center">
+        <SignatureImage cert={cert} height={64} />
+        <div className="h-px w-full bg-slate-400" />
+        <p className="mt-2 text-[15px] font-medium leading-tight">{s.nome}</p>
+        <p className="mt-1 text-[12px] uppercase tracking-widest text-slate-500">{s.cargo}</p>
       </div>
 
-      <p className="absolute bottom-[26px] inset-x-0 text-center text-[12px] text-slate-500">
+      <p className="absolute bottom-[18px] inset-x-0 text-center text-[12px] text-slate-500">
         Código <span className="font-semibold text-[#1F1147]">{cert.codigo}</span> · Verifique a autenticidade em {t.verifyUrl}
       </p>
     </div>

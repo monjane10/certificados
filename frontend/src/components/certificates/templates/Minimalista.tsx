@@ -1,4 +1,13 @@
-import { CertificateBody, certificateText, fitFontSize, initials, type TemplateProps } from '../shared';
+import {
+  CertificateBody,
+  Logo,
+  SignatureImage,
+  certificateText,
+  fitFontSize,
+  initials,
+  signer,
+  type TemplateProps,
+} from '../shared';
 
 const GREEN = '#0F3D3E';
 const TEAL = '#14B8A6';
@@ -6,13 +15,21 @@ const TEAL = '#14B8A6';
 /** Minimalista: faixa lateral escura com os dados da instituição, conteúdo limpo à direita. */
 export function MinimalistaTemplate({ cert }: TemplateProps) {
   const t = certificateText(cert);
+  const s = signer(cert);
   return (
     <div className="absolute inset-0 bg-white text-slate-800" style={{ fontFamily: 'Inter, sans-serif' }}>
       <aside className="absolute inset-y-0 left-0 flex w-[300px] flex-col justify-between px-[44px] py-[60px] text-white" style={{ background: GREEN }}>
         <div>
-          <span className="flex h-[64px] w-[64px] items-center justify-center rounded-full text-[22px] font-bold" style={{ background: TEAL }}>
-            {initials(cert.emissor_nome)}
-          </span>
+          <Logo
+            cert={cert}
+            // Caixa branca: logótipos escuros ficam legíveis sobre a faixa verde.
+            className="h-[80px] max-w-[212px] rounded-lg bg-white p-2"
+            fallback={
+              <span className="flex h-[64px] w-[64px] items-center justify-center rounded-full text-[22px] font-bold" style={{ background: TEAL }}>
+                {initials(cert.emissor_nome)}
+              </span>
+            }
+          />
           <p className="mt-5 text-[22px] font-semibold leading-snug">{cert.emissor_nome}</p>
         </div>
         <div className="space-y-5 text-[14px]">
@@ -48,10 +65,11 @@ export function MinimalistaTemplate({ cert }: TemplateProps) {
           <CertificateBody cert={cert} strongClass="text-slate-900" />
         </p>
 
-        <div className="absolute bottom-[90px] left-[80px] w-[300px]">
+        <div className="absolute left-[80px] top-[630px] w-[300px]">
+          <SignatureImage cert={cert} height={66} />
           <div className="h-px w-full bg-slate-300" />
-          <p className="mt-2 text-[15px] font-semibold" style={{ color: GREEN }}>{cert.emissor_nome}</p>
-          <p className="text-[12px] uppercase tracking-[0.2em] text-slate-500">Coordenação</p>
+          <p className="mt-2 text-[15px] font-semibold leading-tight" style={{ color: GREEN }}>{s.nome}</p>
+          <p className="mt-0.5 text-[12px] uppercase tracking-[0.2em] text-slate-500">{s.cargo}</p>
         </div>
       </div>
     </div>

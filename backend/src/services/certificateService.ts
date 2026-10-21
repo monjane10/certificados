@@ -4,7 +4,8 @@ import { HttpError, dbError, requireOwnedCourse } from './courseService.js';
 
 const CERT_COLUMNS =
   'id, codigo, matricula_id, curso_id, formando_id, tipo, modelo, formando_nome, curso_nome, carga_horaria, ' +
-  'data_abertura, data_encerramento, nota, emissor_nome, estado, emitido_em, anulado_em, motivo_anulacao';
+  'data_abertura, data_encerramento, nota, emissor_nome, logo_path, assinatura_path, responsavel_nome, ' +
+  'responsavel_cargo, estado, emitido_em, anulado_em, motivo_anulacao';
 
 export const CERT_CODE_RE = /^CERT-[A-HJ-NP-Z2-9]{8}$/;
 

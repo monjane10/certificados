@@ -4,6 +4,7 @@ import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { courseBlockReason, eligibilityOf } from '../../lib/certificates';
 import { templateById } from '../certificates/registry';
+import { useAuth } from '../../contexts/AuthContext';
 import { NOTA_MINIMA_APROVACAO, type Course, type EnrollmentView } from '../../types';
 
 export function countEligibility(course: Course, enrollments: EnrollmentView[]) {
@@ -24,7 +25,9 @@ export function CertificatePanel({
   onEmit: () => void;
   onChooseTemplate: () => void;
 }) {
+  const { profile } = useAuth();
   const counts = countEligibility(course, enrollments);
+  const faltaIdentidade = !profile?.logo_path || !profile?.assinatura_path;
   const blocked = courseBlockReason(course);
   const tecnico = course.tipo === 'tecnico_profissional';
 
@@ -69,6 +72,19 @@ export function CertificatePanel({
               Escolher modelo
             </button>
           </p>
+          {faltaIdentidade && (
+            <p className="mt-1 text-sm text-slate-500">
+              {!profile?.logo_path && !profile?.assinatura_path
+                ? 'Sem logótipo nem assinatura.'
+                : !profile?.logo_path
+                  ? 'Sem logótipo.'
+                  : 'Sem assinatura.'}{' '}
+              <Link to="/app/perfil" className="font-semibold text-brand-900 hover:underline">
+                Adicionar no Perfil
+              </Link>{' '}
+              antes de emitir.
+            </p>
+          )}
         </div>
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:items-end">
           <Button onClick={onEmit} disabled={Boolean(blocked) || counts.elegivel === 0} className="w-full sm:w-auto">

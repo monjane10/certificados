@@ -1,4 +1,14 @@
-import { CANVAS_H, CANVAS_W, CertificateBody, certificateText, fitFontSize, type TemplateProps } from '../shared';
+import {
+  CANVAS_H,
+  CANVAS_W,
+  CertificateBody,
+  Logo,
+  SignatureImage,
+  certificateText,
+  fitFontSize,
+  signer,
+  type TemplateProps,
+} from '../shared';
 
 const DARK = '#16548C';
 const LIGHT = '#55C3EA';
@@ -30,6 +40,7 @@ function Gear({ cx, cy, r, color }: { cx: number; cy: number; r: number; color: 
 /** Ondas Azuis: fundo azul-claro, ondas nos cantos, medalha e engrenagens. */
 export function OndasAzuisTemplate({ cert }: TemplateProps) {
   const t = certificateText(cert);
+  const s = signer(cert);
   return (
     <div className="absolute inset-0 bg-[#EAF6FD]" style={{ color: NAVY, fontFamily: "'Montserrat', sans-serif" }}>
       <svg className="absolute inset-0" width={CANVAS_W} height={CANVAS_H} viewBox={`0 0 ${CANVAS_W} ${CANVAS_H}`} aria-hidden>
@@ -40,8 +51,8 @@ export function OndasAzuisTemplate({ cert }: TemplateProps) {
         <path d="M0 545 C110 575 190 680 215 794 L0 794 Z" fill={DARK} />
         <path d="M0 680 C120 680 230 730 330 794 L0 794 Z" fill={LIGHT} />
 
-        {/* Medalha */}
-        <g>
+        {/* Medalha (substituída pelo logótipo, se existir) */}
+        <g display={cert.logo_path ? 'none' : undefined}>
           <path d="M120 230 L82 330 L112 318 L130 350 L160 250 Z" fill={DARK} />
           <path d="M210 230 L248 330 L218 318 L200 350 L170 250 Z" fill={DARK} />
           {Array.from({ length: 18 }, (_, i) => {
@@ -58,6 +69,8 @@ export function OndasAzuisTemplate({ cert }: TemplateProps) {
         <Gear cx={1062} cy={655} r={46} color={DARK} />
         <Gear cx={990} cy={712} r={56} color={LIGHT} />
       </svg>
+
+      <Logo cert={cert} className="absolute left-[60px] top-[70px] h-[190px] w-[200px] object-left-top" />
 
       <div className="absolute inset-x-[230px] top-[118px] text-center">
         <h1 className="text-[112px] font-black leading-none" style={{ fontFamily: "'Playfair Display', serif" }}>
@@ -76,17 +89,18 @@ export function OndasAzuisTemplate({ cert }: TemplateProps) {
         <div className="mx-auto -mt-[0.45em] h-[2px] w-[540px]" style={{ background: NAVY, fontSize: fitFontSize(cert.formando_nome, 88, 18) }} />
       </div>
 
-      <p className="absolute left-[250px] right-[250px] top-[515px] text-center text-[21px] leading-[1.45]">
+      <p className="absolute left-[250px] right-[250px] top-[498px] text-center text-[21px] leading-[1.45]">
         <CertificateBody cert={cert} strongClass="font-semibold" />
       </p>
 
-      <div className="absolute left-1/2 top-[668px] w-[300px] -translate-x-1/2 text-center">
+      <div className="absolute left-1/2 top-[686px] w-[320px] -translate-x-1/2 text-center">
+        <SignatureImage cert={cert} height={64} />
         <div className="h-[2px] w-full" style={{ background: NAVY }} />
-        <p className="mt-2 text-[16px] font-medium uppercase tracking-wider">Coordenação</p>
-        <p className="text-[14px] leading-tight">{cert.emissor_nome}</p>
+        <p className="mt-2 text-[15px] font-medium uppercase tracking-wider">{s.cargo}</p>
+        <p className="text-[14px] leading-tight">{s.nome}</p>
       </div>
 
-      <p className="absolute bottom-[24px] left-[300px] right-[300px] text-center text-[12px] text-[#3E6A96]">
+      <p className="absolute bottom-[14px] left-[300px] right-[300px] text-center text-[12px] text-[#3E6A96]">
         Emitido a {t.dataEmissao} · Código <span className="font-semibold">{cert.codigo}</span> · {t.verifyUrl}
       </p>
     </div>

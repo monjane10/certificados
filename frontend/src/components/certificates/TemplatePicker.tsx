@@ -1,11 +1,11 @@
 import { Check } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { NOTA_MINIMA_APROVACAO, type CertificateTemplate, type Course, type PublicCertificate } from '../../types';
+import { NOTA_MINIMA_APROVACAO, type CertificateTemplate, type Course, type Profile, type PublicCertificate } from '../../types';
 import { CertificateDocument } from './CertificateDocument';
 import { CERTIFICATE_TEMPLATES } from './registry';
 
 /** Certificado de exemplo com os dados do curso, para pré-visualizar os modelos. */
-function sampleFor(course: Course, emissor: string, modelo: CertificateTemplate): PublicCertificate {
+function sampleFor(course: Course, profile: Profile | null, modelo: CertificateTemplate): PublicCertificate {
   const hoje = new Date().toISOString().slice(0, 10);
   return {
     codigo: 'CERT-EXEMPLO',
@@ -17,7 +17,11 @@ function sampleFor(course: Course, emissor: string, modelo: CertificateTemplate)
     data_abertura: course.data_abertura,
     data_encerramento: course.data_encerramento ?? hoje,
     nota: course.tipo === 'tecnico_profissional' ? Math.max(NOTA_MINIMA_APROVACAO, 15) : null,
-    emissor_nome: emissor,
+    emissor_nome: profile?.organization_name ?? 'A sua instituição',
+    logo_path: profile?.logo_path ?? null,
+    assinatura_path: profile?.assinatura_path ?? null,
+    responsavel_nome: profile?.responsavel_nome ?? null,
+    responsavel_cargo: profile?.responsavel_cargo ?? null,
     estado: 'emitido',
     emitido_em: new Date().toISOString(),
     anulado_em: null,
@@ -34,7 +38,6 @@ export function TemplatePicker({
   onSelect: (modelo: CertificateTemplate) => void;
 }) {
   const { profile } = useAuth();
-  const emissor = profile?.organization_name ?? 'A sua instituição';
 
   return (
     <div className="grid gap-4 sm:grid-cols-2">
@@ -51,7 +54,7 @@ export function TemplatePicker({
               selected ? 'border-brand-500' : 'border-transparent hover:border-slate-200'
             }`}
           >
-            <CertificateDocument cert={sampleFor(course, emissor, tpl.id)} className="rounded-md border border-slate-200" />
+            <CertificateDocument cert={sampleFor(course, profile, tpl.id)} className="rounded-md border border-slate-200" />
             <div className="mt-2 flex items-start justify-between gap-2 px-1">
               <div>
                 <p className="text-sm font-semibold text-brand-950">{tpl.nome}</p>

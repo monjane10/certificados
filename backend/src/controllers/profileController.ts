@@ -28,8 +28,17 @@ export async function getOwnProfile(req: Request, res: Response) {
 }
 
 export async function patchOwnProfile(req: Request, res: Response) {
+  const userId = req.authUser?.id ?? '';
+  // Imagens só da pasta do próprio utilizador (a BD também o garante).
+  for (const key of ['logo_path', 'assinatura_path'] as const) {
+    const path = req.body[key];
+    if (typeof path === 'string' && !path.startsWith(`${userId}/`)) {
+      res.status(400).json({ error: 'Imagem inválida.' });
+      return;
+    }
+  }
   try {
-    const profile = await updateOwnProfileScoped(tokenOf(req), req.body);
+    const profile = await updateOwnProfileScoped(tokenOf(req), userId, req.body);
     if (!profile) {
       res.status(404).json({ error: 'Perfil não encontrado.' });
       return;

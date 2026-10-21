@@ -1,5 +1,6 @@
 import type { NextFunction, Request, Response } from 'express';
 import { scopedClient, supabaseAnon } from '../config/supabase.js';
+import { PROFILE_COLUMNS } from '../services/profileService.js';
 
 export async function authenticate(req: Request, res: Response, next: NextFunction) {
   try {
@@ -21,7 +22,7 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
     // Identidade vem SEMPRE do token validado.
     const { data: profile } = await scopedClient(token)
       .from('profiles')
-      .select('id, code, email, phone, organization_name, role, created_at, updated_at')
+      .select(PROFILE_COLUMNS)
       .eq('id', data.user.id)
       .maybeSingle();
 

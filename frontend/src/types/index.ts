@@ -7,6 +7,11 @@ export interface Profile {
   phone: string | null;
   organization_name: string;
   role: Role;
+  /** Imagens no bucket "branding" e quem assina os certificados. */
+  logo_path: string | null;
+  assinatura_path: string | null;
+  responsavel_nome: string | null;
+  responsavel_cargo: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -102,6 +107,10 @@ export interface Certificate {
   data_encerramento: string;
   nota: number | null;
   emissor_nome: string;
+  logo_path: string | null;
+  assinatura_path: string | null;
+  responsavel_nome: string | null;
+  responsavel_cargo: string | null;
   estado: CertificateState;
   emitido_em: string;
   anulado_em: string | null;

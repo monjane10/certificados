@@ -203,6 +203,16 @@ Preencher:
     certificado na emissão; mudar o modelo do curso actualiza também os
     certificados activos (só a aparência; o conteúdo não muda). O desenho de
     cada modelo está em `frontend/src/components/certificates/templates/`.
+12. Aplicar a migração `20261021000004_identidade_certificados.sql` (DEPOIS
+    da anterior). Logótipo, assinatura e responsável nos certificados:
+    - perfil: `logo_path`, `assinatura_path`, `responsavel_nome`,
+      `responsavel_cargo` (editáveis em **Perfil → Identidade nos
+      certificados**);
+    - bucket de Storage `branding` (leitura pública, máx. 1 MB, PNG/JPG/WebP);
+      cada utilizador só escreve na pasta `<user_id>/`;
+    - a assinatura tem o fundo branco removido no browser antes do envio;
+    - os quatro campos são copiados para o certificado na emissão: alterar o
+      logótipo/assinatura não muda certificados já emitidos.
 
 ## Execução
 

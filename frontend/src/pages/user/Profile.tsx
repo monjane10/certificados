@@ -1,4 +1,5 @@
 import { ProfileForm } from '../ProfileForm';
+import { CertificateBrandingCard } from '../../components/profile/CertificateBrandingCard';
 
 export function UserProfile() {
   return (
@@ -8,6 +9,7 @@ export function UserProfile() {
         <p className="text-sm text-slate-500">Consulte e actualize os dados permitidos.</p>
       </div>
       <ProfileForm />
+      <CertificateBrandingCard />
     </div>
   );
 }

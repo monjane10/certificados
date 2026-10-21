@@ -1,11 +1,33 @@
 import { scopedClient } from '../config/supabase.js';
 import type { Profile } from '../types/index.js';
 
+export const PROFILE_COLUMNS =
+  'id, code, email, phone, organization_name, role, logo_path, assinatura_path, responsavel_nome, responsavel_cargo, created_at, updated_at';
+
+/** Campos que o próprio utilizador pode alterar (null limpa o valor). */
+export interface OwnProfilePatch {
+  organization_name?: string;
+  phone?: string;
+  logo_path?: string | null;
+  assinatura_path?: string | null;
+  responsavel_nome?: string | null;
+  responsavel_cargo?: string | null;
+}
+
+const EDITABLE: Array<keyof OwnProfilePatch> = [
+  'organization_name',
+  'phone',
+  'logo_path',
+  'assinatura_path',
+  'responsavel_nome',
+  'responsavel_cargo',
+];
+
 /** Lê o próprio perfil com RLS (auth.uid() = id). */
 export async function fetchOwnProfile(accessToken: string): Promise<Profile | null> {
   const { data, error } = await scopedClient(accessToken)
     .from('profiles')
-    .select('id, code, email, phone, organization_name, role, created_at, updated_at')
+    .select(PROFILE_COLUMNS)
     .maybeSingle();
   if (error) {
     console.error('fetchOwnProfile:', error.message);
@@ -14,20 +36,22 @@ export async function fetchOwnProfile(accessToken: string): Promise<Profile | nu
   return (data as Profile | null) ?? null;
 }
 
-/** Actualiza apenas organization_name/phone do próprio perfil. */
+/** Actualiza apenas os campos editáveis do próprio perfil (nunca role/code). */
 export async function updateOwnProfileScoped(
   accessToken: string,
-  patch: { organization_name?: string; phone?: string },
+  userId: string,
+  patch: OwnProfilePatch,
 ): Promise<Profile | null> {
-  const payload: Record<string, string> = {};
-  if (patch.organization_name !== undefined) payload.organization_name = patch.organization_name;
-  if (patch.phone !== undefined) payload.phone = patch.phone;
+  const payload: Record<string, string | null> = {};
+  for (const key of EDITABLE) {
+    if (patch[key] !== undefined) payload[key] = patch[key] ?? null;
+  }
 
   const { data, error } = await scopedClient(accessToken)
     .from('profiles')
     .update(payload)
-    .eq('id', (await scopedClient(accessToken).auth.getUser()).data.user?.id ?? '')
-    .select('id, code, email, phone, organization_name, role, created_at, updated_at')
+    .eq('id', userId)
+    .select(PROFILE_COLUMNS)
     .maybeSingle();
   if (error) {
     console.error('updateOwnProfileScoped:', error.message);

@@ -1,5 +1,15 @@
 import { useId } from 'react';
-import { CANVAS_H, CANVAS_W, CertificateBody, certificateText, fitFontSize, type TemplateProps } from '../shared';
+import {
+  CANVAS_H,
+  CANVAS_W,
+  CertificateBody,
+  Logo,
+  SignatureImage,
+  certificateText,
+  fitFontSize,
+  signer,
+  type TemplateProps,
+} from '../shared';
 
 const BROWN = '#3B2A12';
 const GOLD_DARK = '#8A6420';
@@ -19,6 +29,7 @@ function Corner({ transform, stroke }: { transform: string; stroke: string }) {
 /** Dourado Elegante: fundo creme, molduras douradas, nome em caligrafia e selo. */
 export function DouradoTemplate({ cert }: TemplateProps) {
   const t = certificateText(cert);
+  const s = signer(cert);
   const gid = `gold-${useId().replace(/:/g, '')}`;
   const gold = `url(#${gid})`;
   return (
@@ -44,12 +55,20 @@ export function DouradoTemplate({ cert }: TemplateProps) {
             <circle key={i} cx={52 * Math.cos((Math.PI * 2 * i) / 24)} cy={52 * Math.sin((Math.PI * 2 * i) / 24)} r={9} fill={gold} />
           ))}
           <circle r="52" fill={gold} />
-          <circle r="40" fill="none" stroke="#FBF6EA" strokeWidth="2" />
-          <text y="7" textAnchor="middle" fontSize="20" fontWeight="700" fill="#FBF6EA" fontFamily="'Playfair Display', serif">
-            ★
-          </text>
+          {cert.logo_path ? (
+            // Fundo creme no centro do selo para o logótipo assentar.
+            <circle r="42" fill="#FBF6EA" stroke="#FBF6EA" strokeWidth="2" />
+          ) : (
+            <>
+              <circle r="40" fill="none" stroke="#FBF6EA" strokeWidth="2" />
+              <text y="7" textAnchor="middle" fontSize="20" fontWeight="700" fill="#FBF6EA" fontFamily="'Playfair Display', serif">
+                ★
+              </text>
+            </>
+          )}
         </g>
       </svg>
+      <Logo cert={cert} className="absolute left-[531px] top-[612px] h-[60px] w-[60px]" />
 
       <div className="absolute inset-x-[150px] top-[92px] text-center">
         <p className="text-[15px] uppercase tracking-[0.35em]" style={{ color: GOLD_DARK, fontFamily: "'Montserrat', sans-serif" }}>
@@ -73,18 +92,20 @@ export function DouradoTemplate({ cert }: TemplateProps) {
         </p>
       </div>
 
-      <div className="absolute bottom-[96px] left-[150px] w-[260px] text-center text-[15px]">
-        <p>{t.dataEmissao}</p>
-        <div className="mt-1 h-px w-full bg-[#B8892D]" />
-        <p className="mt-1.5 text-[12px] uppercase tracking-[0.2em]" style={{ color: GOLD_DARK }}>Data</p>
+      {/* Data e assinatura: linhas à mesma altura, texto por baixo. */}
+      <div className="absolute left-[150px] top-[652px] w-[260px] text-center text-[15px]">
+        <div className="h-px w-full bg-[#B8892D]" />
+        <p className="mt-2 leading-tight">{t.dataEmissao}</p>
+        <p className="mt-1 text-[12px] uppercase tracking-[0.2em]" style={{ color: GOLD_DARK }}>Data</p>
       </div>
-      <div className="absolute bottom-[96px] right-[150px] w-[260px] text-center text-[15px]">
-        <p className="leading-tight">{cert.emissor_nome}</p>
-        <div className="mt-1 h-px w-full bg-[#B8892D]" />
-        <p className="mt-1.5 text-[12px] uppercase tracking-[0.2em]" style={{ color: GOLD_DARK }}>Coordenação</p>
+      <div className="absolute right-[150px] top-[652px] w-[260px] text-center text-[15px]">
+        <SignatureImage cert={cert} height={64} />
+        <div className="h-px w-full bg-[#B8892D]" />
+        <p className="mt-2 leading-tight">{s.nome}</p>
+        <p className="mt-1 text-[12px] uppercase tracking-[0.2em]" style={{ color: GOLD_DARK }}>{s.cargo}</p>
       </div>
 
-      <p className="absolute bottom-[50px] inset-x-0 text-center text-[12px]" style={{ color: GOLD_DARK, fontFamily: "'Montserrat', sans-serif" }}>
+      <p className="absolute bottom-[54px] inset-x-0 text-center text-[12px]" style={{ color: GOLD_DARK, fontFamily: "'Montserrat', sans-serif" }}>
         Código <span className="font-semibold">{cert.codigo}</span> · {t.verifyUrl}
       </p>
     </div>
