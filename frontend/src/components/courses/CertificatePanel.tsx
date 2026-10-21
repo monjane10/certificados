@@ -1,8 +1,9 @@
-import { FileBadge } from 'lucide-react';
+import { FileBadge, Palette } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { courseBlockReason, eligibilityOf } from '../../lib/certificates';
+import { templateById } from '../certificates/registry';
 import { NOTA_MINIMA_APROVACAO, type Course, type EnrollmentView } from '../../types';
 
 export function countEligibility(course: Course, enrollments: EnrollmentView[]) {
@@ -16,10 +17,12 @@ export function CertificatePanel({
   course,
   enrollments,
   onEmit,
+  onChooseTemplate,
 }: {
   course: Course;
   enrollments: EnrollmentView[];
   onEmit: () => void;
+  onChooseTemplate: () => void;
 }) {
   const counts = countEligibility(course, enrollments);
   const blocked = courseBlockReason(course);
@@ -59,6 +62,13 @@ export function CertificatePanel({
               </>
             )}
           </dl>
+          <p className="mt-3 flex flex-wrap items-center gap-x-2 text-sm text-slate-600">
+            <Palette size={15} strokeWidth={1.8} aria-hidden />
+            Modelo: <strong className="text-brand-950">{templateById(course.modelo_certificado).nome}</strong>
+            <button type="button" onClick={onChooseTemplate} className="font-semibold text-brand-900 hover:underline">
+              Escolher modelo
+            </button>
+          </p>
         </div>
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:items-end">
           <Button onClick={onEmit} disabled={Boolean(blocked) || counts.elegivel === 0} className="w-full sm:w-auto">

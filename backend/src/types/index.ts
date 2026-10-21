@@ -19,11 +19,14 @@ export type CourseStatus = 'planeado' | 'em_andamento' | 'concluido' | 'cancelad
 
 export type CourseType = 'participacao' | 'tecnico_profissional';
 
+export type CertificateTemplate = 'classico' | 'ondas_azuis' | 'violeta' | 'dourado' | 'minimalista';
+
 export interface Course {
   id: string;
   nome: string;
   carga_horaria: number;
   tipo: CourseType;
+  modelo_certificado: CertificateTemplate;
   codigo: string;
   data_abertura: string | null;
   data_encerramento: string | null;
@@ -82,6 +85,7 @@ export interface Certificate {
   curso_id: string;
   formando_id: string;
   tipo: CourseType;
+  modelo: CertificateTemplate;
   formando_nome: string;
   curso_nome: string;
   carga_horaria: number;
@@ -100,6 +104,7 @@ export type PublicCertificate = Pick<
   Certificate,
   | 'codigo'
   | 'tipo'
+  | 'modelo'
   | 'formando_nome'
   | 'curso_nome'
   | 'carga_horaria'

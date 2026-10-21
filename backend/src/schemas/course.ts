@@ -7,6 +7,14 @@ export type CourseStatus = (typeof COURSE_STATUSES)[number];
 export const COURSE_TYPES = ['participacao', 'tecnico_profissional'] as const;
 export type CourseType = (typeof COURSE_TYPES)[number];
 
+/** Modelos visuais de certificado (o desenho de cada um vive no frontend). */
+export const CERTIFICATE_TEMPLATES = ['classico', 'ondas_azuis', 'violeta', 'dourado', 'minimalista'] as const;
+export type CertificateTemplate = (typeof CERTIFICATE_TEMPLATES)[number];
+
+const modeloCertificado = z.enum(CERTIFICATE_TEMPLATES, {
+  errorMap: () => ({ message: 'Modelo de certificado inválido' }),
+});
+
 const tipo = z.enum(COURSE_TYPES, {
   errorMap: (issue) => ({
     message:
@@ -53,6 +61,7 @@ export const createCourseSchema = z
     nome,
     carga_horaria: cargaHoraria,
     tipo,
+    modelo_certificado: modeloCertificado.default('classico'),
     data_abertura: dateField,
     data_encerramento: dateField,
     status: z.enum(COURSE_STATUSES).default('planeado'),
@@ -68,13 +77,14 @@ export const updateCourseSchema = z
     nome: nome.optional(),
     carga_horaria: cargaHoraria.optional(),
     tipo: tipo.optional(),
+    modelo_certificado: modeloCertificado.optional(),
     data_abertura: dateUpdateField,
     data_encerramento: dateUpdateField,
     status: z.enum(COURSE_STATUSES).optional(),
   })
   .strict()
   .refine((d) => d.nome !== undefined || d.carga_horaria !== undefined || d.status !== undefined
-    || d.tipo !== undefined
+    || d.tipo !== undefined || d.modelo_certificado !== undefined
     || d.data_abertura !== undefined || d.data_encerramento !== undefined, {
     message: 'Nada para actualizar.',
   })

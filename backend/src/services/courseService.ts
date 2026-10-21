@@ -1,9 +1,9 @@
 import { scopedClient } from '../config/supabase.js';
 import { DATES_INCOHERENT_MESSAGE, datesCoherent } from '../schemas/course.js';
-import type { Course, CourseType, CourseWithCount, EnrollmentView, Trainee } from '../types/index.js';
+import type { CertificateTemplate, Course, CourseType, CourseWithCount, EnrollmentView, Trainee } from '../types/index.js';
 
 const COURSE_COLUMNS =
-  'id, nome, carga_horaria, tipo, codigo, data_abertura, data_encerramento, status, user_id, created_at, updated_at';
+  'id, nome, carga_horaria, tipo, modelo_certificado, codigo, data_abertura, data_encerramento, status, user_id, created_at, updated_at';
 
 const NO_GRADES_MESSAGE = 'Cursos de participação não têm avaliação.';
 
@@ -68,6 +68,7 @@ export interface CoursePayload {
   nome: string;
   carga_horaria: number;
   tipo: CourseType;
+  modelo_certificado: CertificateTemplate;
   data_abertura?: string | null;
   data_encerramento?: string | null;
   status: string;
@@ -82,6 +83,7 @@ export async function insertCourse(accessToken: string, userId: string, payload:
         nome: payload.nome,
         carga_horaria: payload.carga_horaria,
         tipo: payload.tipo,
+        modelo_certificado: payload.modelo_certificado,
         codigo: generateCourseCode(),
         data_abertura: payload.data_abertura ?? null,
         data_encerramento: payload.data_encerramento ?? null,
@@ -131,6 +133,7 @@ export async function patchCourse(
   if (patch.nome !== undefined) body['nome'] = patch.nome;
   if (patch.carga_horaria !== undefined) body['carga_horaria'] = patch.carga_horaria;
   if (patch.tipo !== undefined) body['tipo'] = patch.tipo;
+  if (patch.modelo_certificado !== undefined) body['modelo_certificado'] = patch.modelo_certificado;
   if (patch.data_abertura !== undefined) body['data_abertura'] = patch.data_abertura ?? null;
   if (patch.data_encerramento !== undefined) body['data_encerramento'] = patch.data_encerramento ?? null;
   if (patch.status !== undefined) body['status'] = patch.status;

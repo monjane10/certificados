@@ -196,6 +196,13 @@ Preencher:
     - bloqueios enquanto houver certificado activo: alterar a nota, remover a
       matrícula/formando/curso, mudar o tipo do curso;
     - escrita na tabela apenas pelas funções (sem INSERT/UPDATE directos).
+11. Aplicar a migração `20261021000003_modelos_certificado.sql` (DEPOIS da
+    anterior). Modelos visuais de certificado, escolhidos por curso
+    (`cursos.modelo_certificado`): `classico` (por defeito), `ondas_azuis`,
+    `violeta`, `dourado`, `minimalista`. O modelo é copiado para cada
+    certificado na emissão; mudar o modelo do curso actualiza também os
+    certificados activos (só a aparência; o conteúdo não muda). O desenho de
+    cada modelo está em `frontend/src/components/certificates/templates/`.
 
 ## Execução
 

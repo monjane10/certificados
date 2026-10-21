@@ -5,6 +5,8 @@ export interface CourseInput {
   nome: string;
   carga_horaria: number;
   tipo: Course['tipo'];
+  /** Opcional na criação: o backend usa 'classico' por defeito. */
+  modelo_certificado?: Course['modelo_certificado'];
   data_abertura?: string;
   data_encerramento?: string;
   status: Course['status'];

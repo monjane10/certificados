@@ -13,11 +13,13 @@ import { CourseStatusBadge } from '../../components/courses/CourseStatusBadge';
 import { CourseTypeBadge } from '../../components/courses/CourseTypeBadge';
 import { CertificatePanel, countEligibility } from '../../components/courses/CertificatePanel';
 import { certificateService } from '../../services/certificates';
+import { TemplatePicker } from '../../components/certificates/TemplatePicker';
+import { templateById } from '../../components/certificates/registry';
 import { ConfirmDialog } from '../../components/courses/ConfirmDialog';
 import { Modal } from '../../components/courses/Modal';
 import { ErrorState, LoadingState } from '../../components/courses/States';
 import { courseService, traineeService } from '../../services/courses';
-import { NOTA_MINIMA_APROVACAO, type Course, type EnrollmentView, type Trainee } from '../../types';
+import { NOTA_MINIMA_APROVACAO, type CertificateTemplate, type Course, type EnrollmentView, type Trainee } from '../../types';
 
 function fmtDate(d: string | null): string {
   if (!d) return '-';
@@ -49,6 +51,8 @@ export function CourseDetailPage() {
   const [removing, setRemoving] = useState(false);
   const [confirmEmit, setConfirmEmit] = useState(false);
   const [emitting, setEmitting] = useState(false);
+  const [choosingTemplate, setChoosingTemplate] = useState(false);
+  const [savingTemplate, setSavingTemplate] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -232,6 +236,25 @@ export function CourseDetailPage() {
     }
   }
 
+  async function handleTemplate(modelo: CertificateTemplate) {
+    if (savingTemplate) return;
+    setSavingTemplate(true);
+    try {
+      const updated = await courseService.update(id, { modelo_certificado: modelo });
+      setCourse((prev) => (prev ? { ...updated, total_formandos: prev.total_formandos } : updated));
+      const emitidos = enrollments.filter((e) => e.certificado).length;
+      toast.success(
+        `Modelo «${templateById(modelo).nome}» seleccionado.` +
+          (emitidos > 0 ? ` Os ${emitidos} certificado(s) já emitido(s) passam a usar este modelo.` : ''),
+      );
+      setChoosingTemplate(false);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Falha ao alterar o modelo.');
+    } finally {
+      setSavingTemplate(false);
+    }
+  }
+
   async function handleDeleteCourse() {
     if (removing) return;
     setRemoving(true);
@@ -303,7 +326,12 @@ export function CourseDetailPage() {
         </div>
       </Card>
 
-      <CertificatePanel course={course} enrollments={enrollments} onEmit={() => setConfirmEmit(true)} />
+      <CertificatePanel
+        course={course}
+        enrollments={enrollments}
+        onEmit={() => setConfirmEmit(true)}
+        onChooseTemplate={() => setChoosingTemplate(true)}
+      />
 
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
@@ -405,10 +433,23 @@ export function CourseDetailPage() {
         onCancel={() => (removing ? null : setDeleting(null))}
       />
 
+      <Modal
+        open={choosingTemplate}
+        size="xl"
+        title="Modelo de certificado"
+        onClose={() => (savingTemplate ? null : setChoosingTemplate(false))}
+      >
+        <p className="-mt-2 mb-4 text-sm text-slate-500">
+          Pré-visualização com os dados deste curso. O modelo aplica-se a todos os certificados do curso, incluindo os já
+          emitidos (o conteúdo não muda, só a aparência).
+        </p>
+        <TemplatePicker course={course} saving={savingTemplate} onSelect={handleTemplate} />
+      </Modal>
+
       <ConfirmDialog
         open={confirmEmit}
         title="Emitir certificados"
-        description={emitDescription}
+        description={`${emitDescription} Modelo: ${templateById(course.modelo_certificado).nome}.`}
         confirmLabel={`Emitir ${elig.elegivel} certificado(s)`}
         danger={false}
         loading={emitting}

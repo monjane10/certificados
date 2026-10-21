@@ -36,6 +36,9 @@ export const COURSE_TYPE_DESCRIPTIONS: Record<CourseType, string> = {
   tecnico_profissional: 'Nota de 0 a 20 por formando. Certificado com nota.',
 };
 
+/** Modelos visuais de certificado; o desenho de cada um está em components/certificates. */
+export type CertificateTemplate = 'classico' | 'ondas_azuis' | 'violeta' | 'dourado' | 'minimalista';
+
 /** Nota mínima (0-20) para aprovação em cursos técnico-profissionais. */
 export const NOTA_MINIMA_APROVACAO = 10;
 
@@ -44,6 +47,7 @@ export interface Course {
   nome: string;
   carga_horaria: number;
   tipo: CourseType;
+  modelo_certificado: CertificateTemplate;
   codigo: string;
   data_abertura: string | null;
   data_encerramento: string | null;
@@ -90,6 +94,7 @@ export interface Certificate {
   curso_id: string;
   formando_id: string;
   tipo: CourseType;
+  modelo: CertificateTemplate;
   formando_nome: string;
   curso_nome: string;
   carga_horaria: number;
