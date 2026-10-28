@@ -25,6 +25,14 @@ function fmtDateTime(iso: string): string {
   return new Date(iso).toLocaleDateString('pt-MZ');
 }
 
+/** Nota nos técnico-profissionais; carga horária nos de participação. */
+function resultado(c: Certificate): string {
+  return c.tipo === 'tecnico_profissional' ? `${c.nota} valores` : `${c.carga_horaria}h`;
+}
+
+const filterClass =
+  'w-full rounded-control border border-line bg-white px-3.5 py-2.5 text-sm text-ink focus:border-ink/40 focus:outline-none focus:ring-2 focus:ring-soft';
+
 export function UserCertificates() {
   const [searchParams, setSearchParams] = useSearchParams();
   const courseFilter = searchParams.get('curso') ?? '';
@@ -33,6 +41,7 @@ export function UserCertificates() {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState(() => searchParams.get('q') ?? '');
   const [stateFilter, setStateFilter] = useState<StateFilter>('todos');
+  const [selected, setSelected] = useState<Certificate | null>(null);
   const [annulling, setAnnulling] = useState<Certificate | null>(null);
   const [motivo, setMotivo] = useState('');
   const [saving, setSaving] = useState(false);
@@ -41,29 +50,47 @@ export function UserCertificates() {
     setLoading(true);
     setError(null);
     try {
-      setCerts(await certificateService.list(courseFilter || undefined));
+      // Carrega todos: o filtro por curso é local, para a lista de cursos estar sempre completa.
+      setCerts(await certificateService.list());
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Falha ao carregar certificados.');
     } finally {
       setLoading(false);
     }
-  }, [courseFilter]);
+  }, []);
 
   useEffect(() => {
     void load();
   }, [load]);
 
+  const courses = useMemo(() => {
+    const byId = new Map<string, string>();
+    for (const c of certs) byId.set(c.curso_id, c.curso_nome);
+    return [...byId]
+      .map(([id, nome]) => ({ id, nome }))
+      .sort((a, b) => a.nome.localeCompare(b.nome, 'pt'));
+  }, [certs]);
+
+  /** O curso fica no URL (?curso=), para o link vindo da página do curso continuar a funcionar. */
+  function setCourseFilter(id: string) {
+    const next = new URLSearchParams(searchParams);
+    if (id) next.set('curso', id);
+    else next.delete('curso');
+    setSearchParams(next, { replace: true });
+  }
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return certs.filter(
       (c) =>
+        (!courseFilter || c.curso_id === courseFilter) &&
         (stateFilter === 'todos' || c.estado === stateFilter) &&
         (!q ||
           c.codigo.toLowerCase().includes(q) ||
           c.formando_nome.toLowerCase().includes(q) ||
           c.curso_nome.toLowerCase().includes(q)),
     );
-  }, [certs, search, stateFilter]);
+  }, [certs, search, stateFilter, courseFilter]);
 
   async function handleAnnul() {
     if (!annulling || saving) return;
@@ -85,7 +112,7 @@ export function UserCertificates() {
     }
   }
 
-  const courseName = courseFilter ? certs[0]?.curso_nome : undefined;
+  const filtersActive = Boolean(search.trim() || courseFilter || stateFilter !== 'todos');
 
   return (
     <div className="space-y-6">
@@ -96,31 +123,32 @@ export function UserCertificates() {
         </p>
       </div>
 
-      {courseFilter && (
-        <p className="text-sm text-slate-500">
-          Curso: <strong className="text-brand-950">{courseName ?? '...'}</strong> ·{' '}
-          <button
-            onClick={() => setSearchParams({})}
-            className="font-semibold text-brand-900 hover:underline"
-          >
-            Ver todos
-          </button>
-        </p>
-      )}
-
-      <div className="flex flex-col gap-3 sm:flex-row">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_16rem_12rem]">
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Pesquisar por código, formando ou curso"
+          placeholder="Pesquisar por código ou formando"
           aria-label="Pesquisar certificados"
-          className="w-full rounded-control border border-line bg-white px-3.5 py-2.5 text-sm text-ink placeholder:text-muted focus:border-ink/40 focus:outline-none focus:ring-2 focus:ring-soft"
+          className={`${filterClass} placeholder:text-muted sm:col-span-2 lg:col-span-1`}
         />
+        <select
+          value={courseFilter}
+          onChange={(e) => setCourseFilter(e.target.value)}
+          aria-label="Filtrar por curso"
+          className={filterClass}
+        >
+          <option value="">Todos os cursos</option>
+          {courses.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.nome}
+            </option>
+          ))}
+        </select>
         <select
           value={stateFilter}
           onChange={(e) => setStateFilter(e.target.value as StateFilter)}
           aria-label="Filtrar por estado"
-          className="rounded-control border border-line bg-white px-3.5 py-2.5 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-soft sm:w-48"
+          className={filterClass}
         >
           <option value="todos">Todos os estados</option>
           <option value="emitido">Emitidos</option>
@@ -154,60 +182,130 @@ export function UserCertificates() {
           />
         </Card>
       ) : (
-        <ul className="grid gap-3 lg:grid-cols-2">
-          {filtered.map((c) => (
-            <li key={c.id} className="flex flex-col rounded-card border border-line bg-white">
-              <div className="flex items-start justify-between gap-3 px-4 pt-3.5">
-                <div className="min-w-0">
-                  <p className="break-words font-semibold text-ink">{c.formando_nome}</p>
-                  <p className="mt-0.5 break-words text-sm text-muted">{c.curso_nome}</p>
-                </div>
-                <StateBadge estado={c.estado} />
-              </div>
-              <dl className="mt-3 grid grid-cols-2 gap-2 px-4 text-xs sm:grid-cols-4">
-                <div>
-                  <dt className="text-muted">Código</dt>
-                  <dd className="mt-0.5 font-mono font-semibold text-ink">{c.codigo}</dd>
-                </div>
-                <div>
-                  <dt className="text-muted">Tipo</dt>
-                  <dd className="mt-0.5">
-                    <CourseTypeBadge tipo={c.tipo} />
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-muted">{c.tipo === 'tecnico_profissional' ? 'Nota' : 'Carga'}</dt>
-                  <dd className="mt-0.5 font-semibold tabular-nums text-ink">
-                    {c.tipo === 'tecnico_profissional' ? `${c.nota} valores` : `${c.carga_horaria}h`}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-muted">Emitido em</dt>
-                  <dd className="mt-0.5 font-semibold text-ink">{fmtDateTime(c.emitido_em)}</dd>
-                </div>
-              </dl>
-              {c.estado === 'anulado' && (
-                <p className="mx-4 mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-800">
-                  Anulado em {c.anulado_em ? fmtDateTime(c.anulado_em) : '-'}: {c.motivo_anulacao}
-                </p>
-              )}
-              <p className="mt-2 px-4 text-xs text-muted">
-                Período: {fmtDate(c.data_abertura)} a {fmtDate(c.data_encerramento)}
-              </p>
-              <div className={`mt-3 grid border-t border-line text-sm font-medium ${c.estado === 'emitido' ? 'grid-cols-2' : 'grid-cols-1'}`}>
-                <Link to={`/certificado/${c.codigo}`} target="_blank" className="py-2.5 text-center text-ink hover:bg-soft">
-                  Ver / imprimir
-                </Link>
-                {c.estado === 'emitido' && (
-                  <button onClick={() => setAnnulling(c)} className="border-l border-line py-2.5 text-red-700 hover:bg-red-50">
-                    Anular
-                  </button>
-                )}
-              </div>
-            </li>
-          ))}
-        </ul>
+        <div className="space-y-2">
+          <div className="overflow-hidden rounded-card border border-line bg-white">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-line bg-soft/50 text-xs uppercase tracking-wide text-muted">
+                  <th className="px-4 py-3 font-semibold">Formando</th>
+                  <th className="hidden px-4 py-3 font-semibold md:table-cell">Curso</th>
+                  <th className="hidden px-4 py-3 font-semibold lg:table-cell">Código</th>
+                  <th className="hidden px-4 py-3 font-semibold sm:table-cell">Nota / carga</th>
+                  <th className="hidden px-4 py-3 font-semibold sm:table-cell">Emitido em</th>
+                  <th className="px-4 py-3 text-right font-semibold">Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((c) => (
+                  <tr
+                    key={c.id}
+                    tabIndex={0}
+                    onClick={() => setSelected(c)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setSelected(c);
+                      }
+                    }}
+                    aria-label={`Ver detalhes do certificado ${c.codigo}`}
+                    className="cursor-pointer border-b border-line last:border-0 hover:bg-soft/40 focus:bg-soft/40 focus:outline-none"
+                  >
+                    <td className="px-4 py-3">
+                      <p className="font-semibold text-ink">{c.formando_nome}</p>
+                      {/* Em ecrãs pequenos o curso aparece por baixo do nome. */}
+                      <p className="mt-0.5 text-xs text-muted md:hidden">{c.curso_nome}</p>
+                    </td>
+                    <td className="hidden px-4 py-3 text-slate-600 md:table-cell">{c.curso_nome}</td>
+                    <td className="hidden px-4 py-3 font-mono text-xs text-slate-600 lg:table-cell">{c.codigo}</td>
+                    <td className="hidden px-4 py-3 tabular-nums text-slate-600 sm:table-cell">{resultado(c)}</td>
+                    <td className="hidden px-4 py-3 tabular-nums text-slate-600 sm:table-cell">
+                      {fmtDateTime(c.emitido_em)}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <StateBadge estado={c.estado} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="text-xs text-muted">
+            {filtered.length} {filtered.length === 1 ? 'certificado' : 'certificados'}
+            {filtersActive && ` de ${certs.length}`}
+          </p>
+        </div>
       )}
+
+      <Modal open={selected !== null} title="Detalhes do certificado" onClose={() => setSelected(null)}>
+        {selected && (
+          <div className="space-y-5">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="break-words text-base font-semibold text-ink">{selected.formando_nome}</p>
+                <p className="mt-0.5 break-words text-sm text-muted">{selected.curso_nome}</p>
+              </div>
+              <StateBadge estado={selected.estado} />
+            </div>
+            <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+              <div>
+                <dt className="text-xs text-muted">Código</dt>
+                <dd className="mt-0.5 font-mono font-semibold text-ink">{selected.codigo}</dd>
+              </div>
+              <div>
+                <dt className="text-xs text-muted">Tipo</dt>
+                <dd className="mt-0.5">
+                  <CourseTypeBadge tipo={selected.tipo} />
+                </dd>
+              </div>
+              {selected.tipo === 'tecnico_profissional' && (
+                <div>
+                  <dt className="text-xs text-muted">Nota</dt>
+                  <dd className="mt-0.5 font-semibold tabular-nums text-ink">{selected.nota} valores</dd>
+                </div>
+              )}
+              <div>
+                <dt className="text-xs text-muted">Carga horária</dt>
+                <dd className="mt-0.5 font-semibold tabular-nums text-ink">{selected.carga_horaria}h</dd>
+              </div>
+              <div>
+                <dt className="text-xs text-muted">Período</dt>
+                <dd className="mt-0.5 font-semibold text-ink">
+                  {fmtDate(selected.data_abertura)} a {fmtDate(selected.data_encerramento)}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs text-muted">Emitido em</dt>
+                <dd className="mt-0.5 font-semibold text-ink">{fmtDateTime(selected.emitido_em)}</dd>
+              </div>
+            </dl>
+            {selected.estado === 'anulado' && (
+              <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-800">
+                Anulado em {selected.anulado_em ? fmtDateTime(selected.anulado_em) : '-'}: {selected.motivo_anulacao}
+              </p>
+            )}
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              {selected.estado === 'emitido' && (
+                <button
+                  onClick={() => {
+                    setAnnulling(selected);
+                    setSelected(null);
+                  }}
+                  className="inline-flex items-center justify-center rounded-button border border-line px-4 py-2.5 text-sm font-semibold text-red-700 hover:bg-red-50"
+                >
+                  Anular
+                </button>
+              )}
+              <Link
+                to={`/certificado/${selected.codigo}`}
+                target="_blank"
+                className="inline-flex items-center justify-center rounded-button bg-ink px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-950"
+              >
+                Ver certificado
+              </Link>
+            </div>
+          </div>
+        )}
+      </Modal>
 
       <Modal open={annulling !== null} title="Anular certificado" onClose={() => (saving ? null : setAnnulling(null))}>
         {annulling && (

@@ -7,7 +7,7 @@ const styles: Record<CourseType, string> = {
 
 export function CourseTypeBadge({ tipo }: { tipo: CourseType }) {
   return (
-    <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${styles[tipo]}`}>
+    <span className={`inline-flex items-center whitespace-nowrap rounded-full border px-2.5 py-0.5 text-xs font-semibold ${styles[tipo]}`}>
       {COURSE_TYPE_LABELS[tipo]}
     </span>
   );
