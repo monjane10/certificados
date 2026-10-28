@@ -1,6 +1,6 @@
 import { scopedClient, supabaseAnon } from '../config/supabase.js';
 import type { Certificate, EmissionSummary, PublicCertificate } from '../types/index.js';
-import { HttpError, dbError, requireOwnedCourse } from './courseService.js';
+import { dbError, requireOwnedCourse } from './courseService.js';
 
 const CERT_COLUMNS =
   'id, codigo, matricula_id, curso_id, formando_id, tipo, modelo, formando_nome, curso_nome, carga_horaria, ' +
@@ -22,7 +22,7 @@ export async function listCertificates(
     .order('emitido_em', { ascending: false });
   if (courseId) query = query.eq('curso_id', courseId);
   const { data, error } = await query;
-  if (error) throw new HttpError(500, 'Falha ao listar certificados.');
+  if (error) throw dbError(error, 500, 'Falha ao listar certificados.');
   return (data ?? []) as unknown as Certificate[];
 }
 
@@ -75,6 +75,6 @@ export async function countIssuedCertificates(accessToken: string): Promise<numb
 /** Verificação pública por código (sem autenticação). */
 export async function verifyCertificate(codigo: string): Promise<PublicCertificate | null> {
   const { data, error } = await supabaseAnon.rpc('verificar_certificado', { p_codigo: codigo });
-  if (error) throw new HttpError(500, 'Falha ao verificar o certificado.');
+  if (error) throw dbError(error, 500, 'Falha ao verificar o certificado.');
   return (data as PublicCertificate | null) ?? null;
 }

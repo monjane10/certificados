@@ -137,7 +137,7 @@ export async function patchCourse(
       .select('id', { count: 'exact', head: true })
       .eq('curso_id', courseId)
       .not('avaliacao', 'is', null);
-    if (countError) throw new HttpError(500, 'Falha ao verificar as notas do curso.');
+    if (countError) throw dbError(countError, 500, 'Falha ao verificar as notas do curso.');
     if ((count ?? 0) > 0) {
       throw new HttpError(
         409,
@@ -195,7 +195,7 @@ export async function requireOwnedTrainee(accessToken: string, userId: string, t
     .select('id, nome, email, contacto, user_id, created_at, updated_at')
     .eq('id', traineeId)
     .maybeSingle();
-  if (error) throw new HttpError(500, 'Falha ao consultar o formando.');
+  if (error) throw dbError(error, 500, 'Falha ao consultar o formando.');
   if (!data) throw new HttpError(404, 'Formando não encontrado.');
   const trainee = data as Trainee;
   if (trainee.user_id !== userId) throw new HttpError(404, 'Formando não encontrado.');
@@ -212,7 +212,7 @@ export async function listTrainees(accessToken: string, userId: string, q?: stri
   const term = q?.trim();
   if (term) query = query.ilike('nome', `%${term.replace(/[%_]/g, '')}%`);
   const { data, error } = await query;
-  if (error) throw new HttpError(500, 'Falha ao listar formandos.');
+  if (error) throw dbError(error, 500, 'Falha ao listar formandos.');
   // Achata as matrículas em `cursos` (usado pela pesquisa global para abrir o curso certo).
   type Row = Omit<Trainee, 'cursos'> & {
     matriculas?: Array<{ cursos: { id: string; nome: string } | Array<{ id: string; nome: string }> | null }>;
@@ -245,7 +245,8 @@ export async function insertTrainee(
     })
     .select('id, nome, email, contacto, user_id, created_at, updated_at')
     .maybeSingle();
-  if (error || !data) throw new HttpError(400, 'Não foi possível registar o formando.');
+  if (error) throw dbError(error, 400, 'Não foi possível registar o formando.');
+  if (!data) throw new HttpError(400, 'Não foi possível registar o formando.');
   return data as Trainee;
 }
 
@@ -268,7 +269,8 @@ export async function patchTrainee(
     .eq('user_id', userId)
     .select('id, nome, email, contacto, user_id, created_at, updated_at')
     .maybeSingle();
-  if (error || !data) throw new HttpError(400, 'Não foi possível actualizar o formando.');
+  if (error) throw dbError(error, 400, 'Não foi possível actualizar o formando.');
+  if (!data) throw new HttpError(400, 'Não foi possível actualizar o formando.');
   return data as Trainee;
 }
 
@@ -314,7 +316,7 @@ export async function listEnrollments(
     .select(ENROLL_VIEW)
     .eq('curso_id', courseId)
     .order('created_at', { ascending: false });
-  if (error) throw new HttpError(500, 'Falha ao listar formandos.');
+  if (error) throw dbError(error, 500, 'Falha ao listar formandos.');
   return ((data ?? []) as unknown as EnrollmentRow[]).map(toView);
 }
 
@@ -337,7 +339,7 @@ export async function enrollExisting(
     if (error.code === '23505') {
       throw new HttpError(409, 'Este formando já está matriculado neste curso.');
     }
-    throw new HttpError(400, 'Não foi possível matricular o formando.');
+    throw dbError(error, 400, 'Não foi possível matricular o formando.');
   }
   if (!data) throw new HttpError(400, 'Não foi possível matricular o formando.');
   return toView(data as unknown as EnrollmentRow);
@@ -368,6 +370,7 @@ export async function enrollNew(
   if (error || !data) {
     // Compensação: evita formando órfão se a matrícula falhar.
     await client.from('formandos').delete().eq('id', trainee.id).eq('user_id', userId);
+    if (error) throw dbError(error, 400, 'Não foi possível matricular o formando.');
     throw new HttpError(400, 'Não foi possível matricular o formando.');
   }
   return toView(data as unknown as EnrollmentRow);
@@ -380,7 +383,7 @@ async function requireOwnedEnrollment(accessToken: string, userId: string, matri
     .select('id, formando_id, curso_id, cursos!inner(id, user_id, tipo)')
     .eq('id', matriculaId)
     .maybeSingle();
-  if (error) throw new HttpError(500, 'Falha ao consultar a matrícula.');
+  if (error) throw dbError(error, 500, 'Falha ao consultar a matrícula.');
   if (!data) throw new HttpError(404, 'Matrícula não encontrada.');
   const row = data as unknown as {
     id: string;
