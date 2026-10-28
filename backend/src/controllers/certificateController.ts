@@ -4,9 +4,18 @@ import {
   annulCertificate,
   emitCertificates,
   listCertificates,
+  markWhatsappSent,
   verifyCertificate,
 } from '../services/certificateService.js';
+import {
+  ACCESS_TOKEN_RE,
+  getStudentCertificate,
+  normalizePhone,
+  payCertificate,
+  validatePhone,
+} from '../services/paymentService.js';
 import { HttpError } from '../services/courseService.js';
+import { studentPaymentSchema } from '../schemas/certificate.js';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -61,6 +70,64 @@ export async function postAnnulCertificate(req: Request, res: Response) {
     res.json({ certificate });
   } catch (e) {
     fail(res, e, 'Não foi possível anular o certificado.');
+  }
+}
+
+export async function postWhatsappSent(req: Request, res: Response) {
+  if (!UUID_RE.test(req.params['id'] ?? '')) {
+    res.status(400).json({ error: 'Identificador inválido.' });
+    return;
+  }
+  try {
+    const { token } = ctx(req);
+    res.json({ whatsapp_enviado_em: await markWhatsappSent(token, req.params['id'] as string) });
+  } catch (e) {
+    fail(res, e, 'Não foi possível registar o envio.');
+  }
+}
+
+// --- Formando (link privado, sem sessão) -----------------------------------------------
+
+export async function getStudentCertificateByToken(req: Request, res: Response) {
+  const token = String(req.params['token'] ?? '');
+  if (!ACCESS_TOKEN_RE.test(token)) {
+    res.status(404).json({ error: 'Link inválido. Confirme o link que recebeu.' });
+    return;
+  }
+  try {
+    const certificate = await getStudentCertificate(token);
+    if (!certificate) {
+      res.status(404).json({ error: 'Link inválido. Confirme o link que recebeu.' });
+      return;
+    }
+    res.json({ certificate });
+  } catch (e) {
+    fail(res, e, 'Falha ao carregar o certificado.');
+  }
+}
+
+export async function postStudentPayment(req: Request, res: Response) {
+  const token = String(req.params['token'] ?? '');
+  if (!ACCESS_TOKEN_RE.test(token)) {
+    res.status(404).json({ error: 'Link inválido. Confirme o link que recebeu.' });
+    return;
+  }
+  const parsed = studentPaymentSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: 'Dados inválidos.', details: parsed.error.flatten().fieldErrors });
+    return;
+  }
+  const telefone = normalizePhone(parsed.data.telefone);
+  const invalido = validatePhone(parsed.data.metodo, telefone);
+  if (invalido) {
+    res.status(400).json({ error: invalido });
+    return;
+  }
+  try {
+    // Pagamento recusado (saldo, PIN cancelado...) é um resultado, não um erro do pedido.
+    res.json(await payCertificate(token, parsed.data.metodo, telefone));
+  } catch (e) {
+    fail(res, e, 'Não foi possível concluir o pagamento.');
   }
 }
 

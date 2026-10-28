@@ -8,7 +8,16 @@ import { CANVAS_H, CANVAS_W } from './shared';
  * 1123x794 (A4 horizontal) e escalados para a largura disponível; na
  * impressão a escala é 1 (ver estilos de impressão em CertificateView).
  */
-export function CertificateDocument({ cert, className = '' }: { cert: PublicCertificate; className?: string }) {
+export function CertificateDocument({
+  cert,
+  className = '',
+  watermark,
+}: {
+  cert: PublicCertificate;
+  className?: string;
+  /** Pré-visualização antes do pagamento: texto repetido na diagonal por cima do certificado. */
+  watermark?: string;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
 
@@ -35,6 +44,20 @@ export function CertificateDocument({ cert, className = '' }: { cert: PublicCert
         style={{ width: CANVAS_W, height: CANVAS_H, transform: `scale(${scale})` }}
       >
         <Component cert={cert} />
+        {watermark && (
+          <div className="pointer-events-none absolute inset-0 select-none overflow-hidden" aria-hidden>
+            <div className="absolute -inset-[30%] flex -rotate-[24deg] flex-col justify-around">
+              {Array.from({ length: 9 }, (_, i) => (
+                <p
+                  key={i}
+                  className="whitespace-nowrap text-center text-[44px] font-black uppercase tracking-[0.3em] text-slate-900/[0.13]"
+                >
+                  {`${watermark} · `.repeat(6)}
+                </p>
+              ))}
+            </div>
+          </div>
+        )}
         {cert.estado === 'anulado' && (
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
             <span className="-rotate-12 rounded-xl border-[8px] border-red-600/80 bg-white/40 px-12 py-3 text-[96px] font-black tracking-[0.2em] text-red-600/80">

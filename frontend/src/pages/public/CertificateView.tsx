@@ -4,23 +4,14 @@ import { Printer, ShieldCheck } from 'lucide-react';
 import { certificateService } from '../../services/certificates';
 import { CertificateDocument } from '../../components/certificates/CertificateDocument';
 import { Spinner } from '../../components/ui/Spinner';
-import type { PublicCertificate } from '../../types';
+import { PRINT_CSS } from '../../components/certificates/print';
+import type { PublicVerification } from '../../types';
 
-// A4 horizontal sem margens; o certificado é impresso a escala 1 (1123x794 px ≈ 297x210 mm)
-// e com as cores de fundo (por defeito os browsers não imprimem fundos).
-const PRINT_CSS = `
-@page { size: A4 landscape; margin: 0; }
-@media print {
-  html, body { background: #fff !important; }
-  .cert-frame { width: 297mm !important; height: 210mm !important; aspect-ratio: auto !important; }
-  .cert-scaler { transform: none !important; }
-  .cert-frame, .cert-frame * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-}`;
 
 /** Certificado no modelo escolhido para o curso, pronto a imprimir ou guardar em PDF. */
 export function CertificateViewPage() {
   const { codigo = '' } = useParams<{ codigo: string }>();
-  const [cert, setCert] = useState<PublicCertificate | null>(null);
+  const [cert, setCert] = useState<PublicVerification | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -42,6 +33,22 @@ export function CertificateViewPage() {
     );
   }
   if (!cert) return <div className="p-8"><Spinner label="A carregar certificado..." /></div>;
+
+  // Até o formando pagar a taxa, o certificado não é público (nem imprimível por quem tem o código).
+  if (!cert.pago) {
+    return (
+      <div className="mx-auto max-w-md p-8 text-center">
+        <p className="text-lg font-bold text-brand-950">Certificado pendente de pagamento</p>
+        <p className="mt-2 text-sm text-slate-500">
+          O certificado {cert.codigo} do curso «{cert.curso_nome}», emitido por {cert.emissor_nome}, fica disponível
+          depois de o formando pagar a taxa, através do link que recebeu.
+        </p>
+        <Link to={`/verificar?codigo=${cert.codigo}`} className="mt-4 inline-block text-sm font-semibold text-brand-900 hover:underline">
+          Ver estado da verificação
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-100 py-6 print:bg-white print:py-0">

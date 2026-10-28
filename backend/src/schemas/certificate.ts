@@ -10,4 +10,12 @@ export const annulCertificateSchema = z
   })
   .strict();
 
+/** Pagamento da taxa pelo formando (o número é normalizado e validado no controller). */
+export const studentPaymentSchema = z
+  .object({
+    metodo: z.enum(['mpesa', 'emola'], { errorMap: () => ({ message: 'Escolha M-Pesa ou e-Mola.' }) }),
+    telefone: z.string({ required_error: 'Indique o número de telefone.' }).trim().min(9, 'Número inválido.').max(20, 'Número inválido.'),
+  })
+  .strict();
+
 export type AnnulCertificateInput = z.infer<typeof annulCertificateSchema>;

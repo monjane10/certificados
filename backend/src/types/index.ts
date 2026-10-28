@@ -109,6 +109,14 @@ export interface Certificate {
   emitido_em: string;
   anulado_em: string | null;
   motivo_anulacao: string | null;
+  /** Link privado do formando: /c/<acesso_token>. */
+  acesso_token: string;
+  /** Taxa do certificado em MT (participação 100, técnico-profissional 150). */
+  taxa_valor: number;
+  pago_em: string | null;
+  whatsapp_enviado_em: string | null;
+  /** Contacto actual do formando (não faz parte do snapshot). */
+  formando_contacto?: string | null;
 }
 
 /** Dados públicos devolvidos pela verificação (sem ids internos). */
@@ -132,6 +140,21 @@ export type PublicCertificate = Pick<
   | 'emitido_em'
   | 'anulado_em'
 >;
+
+/**
+ * Verificação pública: sem pagamento só vêm código, tipo, curso, emissor e
+ * estado (pago: false); com pagamento vêm todos os dados impressos.
+ */
+export type PublicVerification =
+  | (PublicCertificate & { pago: true })
+  | (Pick<PublicCertificate, 'codigo' | 'tipo' | 'curso_nome' | 'emissor_nome' | 'estado' | 'emitido_em' | 'anulado_em'> & {
+      pago: false;
+    });
+
+/** Página do formando (link privado): dados completos, estado do pagamento e taxa. */
+export type StudentCertificate = PublicCertificate & { pago: boolean; taxa_valor: number };
+
+export type PaymentMethod = 'mpesa' | 'emola';
 
 export interface EmissionSummary {
   total: number;

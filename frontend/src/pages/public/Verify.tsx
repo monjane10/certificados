@@ -6,9 +6,9 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { certificateService } from '../../services/certificates';
 import { fmtDate } from '../../lib/certificates';
-import { COURSE_TYPE_LABELS, type PublicCertificate } from '../../types';
+import { COURSE_TYPE_LABELS, type PublicVerification } from '../../types';
 
-type Result = { kind: 'ok'; cert: PublicCertificate } | { kind: 'not_found'; message: string } | null;
+type Result = { kind: 'ok'; cert: PublicVerification } | { kind: 'not_found'; message: string } | null;
 
 export function VerifyPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -80,7 +80,28 @@ export function VerifyPage() {
   );
 }
 
-function VerificationResult({ cert }: { cert: PublicCertificate }) {
+function VerificationResult({ cert }: { cert: PublicVerification }) {
+  if (!cert.pago) {
+    // Sem pagamento não se mostram os dados do formando: só que o código existe.
+    const anulado = cert.estado === 'anulado';
+    return (
+      <div className={`mt-6 rounded-xl border p-4 ${anulado ? 'border-red-200 bg-red-50' : 'border-amber-200 bg-amber-50'}`} role="status">
+        <p className={`flex items-center gap-2 font-bold ${anulado ? 'text-red-700' : 'text-amber-800'}`}>
+          {anulado ? <CircleX size={18} /> : <CircleAlert size={18} />}
+          {anulado ? 'Certificado anulado' : 'Certificado pendente de pagamento'}
+        </p>
+        <p className="mt-2 text-sm text-slate-700">
+          {anulado
+            ? 'Este certificado foi anulado pela instituição e não é válido.'
+            : 'O certificado foi emitido mas ainda não é válido: o formando tem de pagar a taxa através do link que recebeu.'}
+        </p>
+        <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
+          <Field label="Curso" value={cert.curso_nome} />
+          <Field label="Emitido por" value={cert.emissor_nome} />
+        </dl>
+      </div>
+    );
+  }
   const valido = cert.estado === 'emitido';
   return (
     <div className={`mt-6 rounded-xl border p-4 ${valido ? 'border-accent-500/40 bg-accent-50' : 'border-red-200 bg-red-50'}`} role="status">

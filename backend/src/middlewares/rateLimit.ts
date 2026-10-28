@@ -10,6 +10,15 @@ export const sensitiveLimiter = rateLimit({
   message: { error: 'Demasiados pedidos. Tente novamente mais tarde.' },
 });
 
+// Pagamentos do formando: cada tentativa gera um pedido no telemóvel.
+export const paymentLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'Demasiadas tentativas de pagamento. Tente novamente mais tarde.' },
+});
+
 // Verificação pública de certificados (sem autenticação): trava enumeração de códigos.
 export const publicVerifyLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,

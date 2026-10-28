@@ -7,6 +7,7 @@ import { AdminRoutes, UserRoutes } from './routes/AppRoutes';
 import { HomePage } from './pages/public/Home';
 import { VerifyPage } from './pages/public/Verify';
 import { CertificateViewPage } from './pages/public/CertificateView';
+import { StudentCertificatePage } from './pages/public/StudentCertificate';
 import { LoginPage } from './pages/auth/Login';
 import { RegisterPage } from './pages/auth/Register';
 import { ForbiddenPage, NotFoundPage } from './pages/Status';
@@ -29,6 +30,8 @@ export default function App() {
 
           {/* Certificado para impressão: sem navbar/rodapé. */}
           <Route path="certificado/:codigo" element={<CertificateViewPage />} />
+          {/* Link privado do formando: pré-visualização, pagamento e certificado. */}
+          <Route path="c/:token" element={<StudentCertificatePage />} />
 
           {/* Privadas */}
           <Route element={<ProtectedRoute roles={['admin']} />}>

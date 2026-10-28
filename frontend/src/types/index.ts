@@ -120,13 +120,45 @@ export interface Certificate {
   emitido_em: string;
   anulado_em: string | null;
   motivo_anulacao: string | null;
+  /** Link privado do formando: /c/<acesso_token>. */
+  acesso_token: string;
+  /** Taxa paga pelo formando, em MT (participação 100, técnico-profissional 150). */
+  taxa_valor: number;
+  pago_em: string | null;
+  whatsapp_enviado_em: string | null;
+  /** Contacto actual do formando (para o envio por WhatsApp). */
+  formando_contacto: string | null;
 }
 
-/** Dados devolvidos pela verificação pública. */
+/** Dados impressos no certificado (o que os modelos desenham). */
 export type PublicCertificate = Omit<
   Certificate,
-  'id' | 'matricula_id' | 'curso_id' | 'formando_id' | 'motivo_anulacao'
+  | 'id'
+  | 'matricula_id'
+  | 'curso_id'
+  | 'formando_id'
+  | 'motivo_anulacao'
+  | 'acesso_token'
+  | 'taxa_valor'
+  | 'pago_em'
+  | 'whatsapp_enviado_em'
+  | 'formando_contacto'
 >;
+
+/**
+ * Verificação pública: antes do pagamento só vêm código, tipo, curso, emissor
+ * e estado (pago: false); depois do pagamento vêm todos os dados impressos.
+ */
+export type PublicVerification =
+  | (PublicCertificate & { pago: true })
+  | (Pick<PublicCertificate, 'codigo' | 'tipo' | 'curso_nome' | 'emissor_nome' | 'estado' | 'emitido_em' | 'anulado_em'> & {
+      pago: false;
+    });
+
+/** Página do formando (link privado): dados completos, estado do pagamento e taxa. */
+export type StudentCertificate = PublicCertificate & { pago: boolean; taxa_valor: number };
+
+export type PaymentMethod = 'mpesa' | 'emola';
 
 export interface EmissionSummary {
   total: number;

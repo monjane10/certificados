@@ -1,11 +1,12 @@
 import { scopedClient, supabaseAnon } from '../config/supabase.js';
-import type { Certificate, EmissionSummary, PublicCertificate } from '../types/index.js';
+import type { Certificate, EmissionSummary, PublicVerification } from '../types/index.js';
 import { dbError, requireOwnedCourse } from './courseService.js';
 
 const CERT_COLUMNS =
   'id, codigo, matricula_id, curso_id, formando_id, tipo, modelo, formando_nome, curso_nome, carga_horaria, ' +
   'data_abertura, data_encerramento, nota, emissor_nome, logo_path, assinatura_path, responsavel_nome, ' +
-  'responsavel_cargo, estado, emitido_em, anulado_em, motivo_anulacao';
+  'responsavel_cargo, estado, emitido_em, anulado_em, motivo_anulacao, acesso_token, taxa_valor, pago_em, ' +
+  'whatsapp_enviado_em';
 
 export const CERT_CODE_RE = /^CERT-[A-HJ-NP-Z2-9]{8}$/;
 
@@ -23,7 +24,27 @@ export async function listCertificates(
   if (courseId) query = query.eq('curso_id', courseId);
   const { data, error } = await query;
   if (error) throw dbError(error, 500, 'Falha ao listar certificados.');
-  return (data ?? []) as unknown as Certificate[];
+  const certs = (data ?? []) as unknown as Certificate[];
+  // Contacto actual do formando, para enviar o link por WhatsApp (não é snapshot:
+  // se o contacto for corrigido, o envio usa o novo).
+  const ids = [...new Set(certs.map((c) => c.formando_id))];
+  if (ids.length === 0) return certs;
+  const { data: formandos, error: fError } = await scopedClient(accessToken)
+    .from('formandos')
+    .select('id, contacto')
+    .in('id', ids);
+  if (fError) throw dbError(fError, 500, 'Falha ao listar certificados.');
+  const contactos = new Map((formandos ?? []).map((f) => [f.id as string, (f.contacto as string | null) ?? null]));
+  return certs.map((c) => ({ ...c, formando_contacto: contactos.get(c.formando_id) ?? null }));
+}
+
+/** Regista que o link foi enviado ao formando pelo WhatsApp da instituição. */
+export async function markWhatsappSent(accessToken: string, certificateId: string): Promise<string> {
+  const { data, error } = await scopedClient(accessToken).rpc('marcar_whatsapp_enviado', {
+    p_certificado_id: certificateId,
+  });
+  if (error) throw dbError(error, 409, 'Não foi possível registar o envio.');
+  return data as string;
 }
 
 /**
@@ -73,8 +94,8 @@ export async function countIssuedCertificates(accessToken: string): Promise<numb
 }
 
 /** Verificação pública por código (sem autenticação). */
-export async function verifyCertificate(codigo: string): Promise<PublicCertificate | null> {
+export async function verifyCertificate(codigo: string): Promise<PublicVerification | null> {
   const { data, error } = await supabaseAnon.rpc('verificar_certificado', { p_codigo: codigo });
   if (error) throw dbError(error, 500, 'Falha ao verificar o certificado.');
-  return (data as PublicCertificate | null) ?? null;
+  return (data as PublicVerification | null) ?? null;
 }

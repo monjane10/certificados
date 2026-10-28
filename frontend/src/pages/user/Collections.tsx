@@ -8,17 +8,29 @@ import { Modal } from '../../components/courses/Modal';
 import { CourseTypeBadge } from '../../components/courses/CourseTypeBadge';
 import { ErrorState, LoadingState } from '../../components/courses/States';
 import { certificateService } from '../../services/certificates';
+import { MessageCircle } from 'lucide-react';
 import { fmtDate } from '../../lib/certificates';
-import type { Certificate, CertificateState } from '../../types';
+import { studentLink, whatsappMessage, whatsappNumber, whatsappUrl } from '../../lib/whatsapp';
+import type { Certificate } from '../../types';
 
-type StateFilter = 'todos' | CertificateState;
+/** O certificado só é válido depois de o formando pagar a taxa. */
+type CertSituation = 'pago' | 'por_pagar' | 'anulado';
+type StateFilter = 'todos' | CertSituation;
 
-function StateBadge({ estado }: { estado: CertificateState }) {
-  return estado === 'emitido' ? (
-    <span className="rounded-full bg-accent-100 px-2 py-0.5 text-xs font-semibold text-accent-700">Emitido</span>
-  ) : (
-    <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">Anulado</span>
-  );
+function situationOf(c: Pick<Certificate, 'estado' | 'pago_em'>): CertSituation {
+  if (c.estado === 'anulado') return 'anulado';
+  return c.pago_em ? 'pago' : 'por_pagar';
+}
+
+const SITUATION_STYLE: Record<CertSituation, { label: string; className: string }> = {
+  pago: { label: 'Pago', className: 'bg-accent-100 text-accent-700' },
+  por_pagar: { label: 'Por pagar', className: 'bg-amber-100 text-amber-800' },
+  anulado: { label: 'Anulado', className: 'bg-red-100 text-red-700' },
+};
+
+function StateBadge({ cert }: { cert: Pick<Certificate, 'estado' | 'pago_em'> }) {
+  const { label, className } = SITUATION_STYLE[situationOf(cert)];
+  return <span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-semibold ${className}`}>{label}</span>;
 }
 
 function fmtDateTime(iso: string): string {
@@ -84,7 +96,7 @@ export function UserCertificates() {
     return certs.filter(
       (c) =>
         (!courseFilter || c.curso_id === courseFilter) &&
-        (stateFilter === 'todos' || c.estado === stateFilter) &&
+        (stateFilter === 'todos' || situationOf(c) === stateFilter) &&
         (!q ||
           c.codigo.toLowerCase().includes(q) ||
           c.formando_nome.toLowerCase().includes(q) ||
@@ -113,6 +125,28 @@ export function UserCertificates() {
   }
 
   const filtersActive = Boolean(search.trim() || courseFilter || stateFilter !== 'todos');
+
+  /** Abre o WhatsApp de quem envia (a instituição) com a mensagem pronta e regista o envio. */
+  async function sendWhatsapp(c: Certificate, numero: string) {
+    window.open(whatsappUrl(numero, whatsappMessage(c)), '_blank', 'noopener');
+    try {
+      const em = await certificateService.markWhatsappSent(c.id);
+      const update = (x: Certificate) => (x.id === c.id ? { ...x, whatsapp_enviado_em: em } : x);
+      setCerts((prev) => prev.map(update));
+      setSelected((prev) => (prev ? update(prev) : prev));
+    } catch {
+      // O envio em si já aconteceu no WhatsApp; falhar o registo não deve bloquear.
+    }
+  }
+
+  async function copyMessage(c: Certificate) {
+    try {
+      await navigator.clipboard.writeText(whatsappMessage(c));
+      toast.success('Mensagem com o link copiada.');
+    } catch {
+      toast.error(`Não foi possível copiar. Link: ${studentLink(c.acesso_token)}`);
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -151,7 +185,8 @@ export function UserCertificates() {
           className={filterClass}
         >
           <option value="todos">Todos os estados</option>
-          <option value="emitido">Emitidos</option>
+          <option value="por_pagar">Por pagar</option>
+          <option value="pago">Pagos</option>
           <option value="anulado">Anulados</option>
         </select>
       </div>
@@ -222,7 +257,7 @@ export function UserCertificates() {
                       {fmtDateTime(c.emitido_em)}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <StateBadge estado={c.estado} />
+                      <StateBadge cert={c} />
                     </td>
                   </tr>
                 ))}
@@ -244,7 +279,7 @@ export function UserCertificates() {
                 <p className="break-words text-base font-semibold text-ink">{selected.formando_nome}</p>
                 <p className="mt-0.5 break-words text-sm text-muted">{selected.curso_nome}</p>
               </div>
-              <StateBadge estado={selected.estado} />
+              <StateBadge cert={selected} />
             </div>
             <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
               <div>
@@ -277,7 +312,26 @@ export function UserCertificates() {
                 <dt className="text-xs text-muted">Emitido em</dt>
                 <dd className="mt-0.5 font-semibold text-ink">{fmtDateTime(selected.emitido_em)}</dd>
               </div>
+              <div>
+                <dt className="text-xs text-muted">Taxa do formando</dt>
+                <dd className="mt-0.5 font-semibold text-ink">
+                  {selected.taxa_valor} MT · {selected.pago_em ? `pago em ${fmtDateTime(selected.pago_em)}` : 'por pagar'}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs text-muted">Link enviado por WhatsApp</dt>
+                <dd className="mt-0.5 font-semibold text-ink">
+                  {selected.whatsapp_enviado_em ? fmtDateTime(selected.whatsapp_enviado_em) : 'Ainda não'}
+                </dd>
+              </div>
             </dl>
+            {selected.estado === 'emitido' && !selected.pago_em && (
+              <SendPanel
+                cert={selected}
+                onWhatsapp={(numero) => void sendWhatsapp(selected, numero)}
+                onCopy={() => void copyMessage(selected)}
+              />
+            )}
             {selected.estado === 'anulado' && (
               <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-800">
                 Anulado em {selected.anulado_em ? fmtDateTime(selected.anulado_em) : '-'}: {selected.motivo_anulacao}
@@ -295,12 +349,13 @@ export function UserCertificates() {
                   Anular
                 </button>
               )}
+              {/* Antes do pagamento o certificado não é público: abre-se a página do formando. */}
               <Link
-                to={`/certificado/${selected.codigo}`}
+                to={selected.pago_em ? `/certificado/${selected.codigo}` : `/c/${selected.acesso_token}`}
                 target="_blank"
                 className="inline-flex items-center justify-center rounded-button bg-ink px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-950"
               >
-                Ver certificado
+                {selected.pago_em ? 'Ver certificado' : 'Ver página do formando'}
               </Link>
             </div>
           </div>
@@ -340,6 +395,47 @@ export function UserCertificates() {
           </div>
         )}
       </Modal>
+    </div>
+  );
+}
+
+/** Envio do link ao formando pelo WhatsApp da instituição (sem API: abre o WhatsApp com a mensagem pronta). */
+function SendPanel({
+  cert,
+  onWhatsapp,
+  onCopy,
+}: {
+  cert: Certificate;
+  onWhatsapp: (numero: string) => void;
+  onCopy: () => void;
+}) {
+  const numero = whatsappNumber(cert.formando_contacto);
+  return (
+    <div className="rounded-lg border border-line bg-soft/40 p-3">
+      <p className="text-sm font-semibold text-ink">Enviar o link ao formando</p>
+      <p className="mt-0.5 text-xs text-muted">
+        {numero
+          ? `Abre o WhatsApp com a mensagem pronta para ${cert.formando_contacto}. Só tem de carregar em enviar.`
+          : 'O formando não tem um contacto moçambicano válido. Copie a mensagem e envie-a por outro meio, ou corrija o contacto em Dados.'}
+      </p>
+      <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+        {numero && (
+          <button
+            type="button"
+            onClick={() => onWhatsapp(numero)}
+            className="inline-flex items-center justify-center gap-2 rounded-button bg-[#1FA855] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#178C46]"
+          >
+            <MessageCircle size={16} /> {cert.whatsapp_enviado_em ? 'Reenviar por WhatsApp' : 'Enviar por WhatsApp'}
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={onCopy}
+          className="inline-flex items-center justify-center rounded-button border border-line bg-white px-4 py-2.5 text-sm font-semibold text-ink hover:bg-soft"
+        >
+          Copiar mensagem
+        </button>
+      </div>
     </div>
   );
 }

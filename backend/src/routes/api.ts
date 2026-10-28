@@ -1,14 +1,17 @@
 import { Router } from 'express';
 import { authenticate } from '../middlewares/auth.js';
 import { requireRole } from '../middlewares/requireRole.js';
-import { publicVerifyLimiter, sensitiveLimiter } from '../middlewares/rateLimit.js';
+import { paymentLimiter, publicVerifyLimiter, sensitiveLimiter } from '../middlewares/rateLimit.js';
 import { validateBody } from '../middlewares/validate.js';
 import { annulCertificateSchema } from '../schemas/certificate.js';
 import {
   getCertificates,
   getPublicCertificate,
+  getStudentCertificateByToken,
   postAnnulCertificate,
   postCourseCertificates,
+  postStudentPayment,
+  postWhatsappSent,
 } from '../controllers/certificateController.js';
 import { updateProfileSchema } from '../schemas/profile.js';
 import { createCourseSchema, updateCourseSchema } from '../schemas/course.js';
@@ -74,6 +77,11 @@ router.delete('/enrollments/:matriculaId', sensitiveLimiter, authenticate, delet
 router.get('/certificates', authenticate, getCertificates);
 router.post('/courses/:id/certificates', sensitiveLimiter, authenticate, postCourseCertificates);
 router.post('/certificates/:id/annul', sensitiveLimiter, authenticate, validateBody(annulCertificateSchema), postAnnulCertificate);
+router.post('/certificates/:id/whatsapp', sensitiveLimiter, authenticate, postWhatsappSent);
 router.get('/public/certificates/:codigo', publicVerifyLimiter, getPublicCertificate);
+
+// Formando: link privado enviado pela instituição; paga a taxa para desbloquear.
+router.get('/public/c/:token', publicVerifyLimiter, getStudentCertificateByToken);
+router.post('/public/c/:token/pagamento', paymentLimiter, postStudentPayment);
 
 export default router;
