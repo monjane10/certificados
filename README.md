@@ -237,6 +237,13 @@ Preencher:
     - passa para as migrações a regra `cursos_datas_obrigatorias`: as duas
       datas são obrigatórias (`NOT VALID`: cursos antigos sem datas têm de as
       receber na próxima edição).
+16. Aplicar a migração `20261028000003_encerramento_cursos.sql` (DEPOIS da
+    anterior). Passa para o repositório o encerramento de cursos, criado
+    fora das migrações (`encerrado_em`, `encerrado_por`, `encerrar_curso` e
+    os triggers que bloqueiam alterações a cursos encerrados e às suas
+    matrículas), já sem depender de `categoria`. Remove
+    `actualizar_estados_cursos`/`calcular_estado_curso`, que escreviam a
+    coluna `status` (e desagenda-as do pg_cron, se estiverem agendadas).
 
 ## Execução
 
