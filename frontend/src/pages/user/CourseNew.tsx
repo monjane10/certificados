@@ -38,8 +38,8 @@ export function CourseNewPage() {
         <h1 className="text-2xl font-extrabold tracking-tight text-brand-950">Novo curso</h1>
         <p className="mt-1 text-sm text-slate-500">Preencha os dados do curso. O código é gerado automaticamente.</p>
       </div>
-      <Card className="max-w-2xl">
-        <CourseForm saving={saving} submitLabel="Criar curso" onSubmit={handleCreate} />
+      <Card>
+        <CourseForm wide saving={saving} submitLabel="Criar curso" onSubmit={handleCreate} />
       </Card>
     </div>
   );

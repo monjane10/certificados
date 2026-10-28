@@ -43,12 +43,15 @@ export function CourseForm({
   submitLabel,
   onSubmit,
   onCancel,
+  wide = false,
 }: {
   initial?: Partial<Course>;
   saving: boolean;
   submitLabel: string;
   onSubmit: (v: CourseFormValues) => void;
   onCancel?: () => void;
+  /** Página inteira: em ecrãs largos carga, estado e datas ficam numa só linha. */
+  wide?: boolean;
 }) {
   const {
     register,
@@ -114,7 +117,7 @@ export function CourseForm({
           </p>
         )}
       </fieldset>
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className={`grid gap-4 sm:grid-cols-2 ${wide ? 'lg:grid-cols-4' : ''}`}>
         <Input
           label="Carga horária (horas)"
           required
@@ -125,6 +128,8 @@ export function CourseForm({
           {...register('carga_horaria')}
           placeholder="Ex.: 40"
         />
+        <Input label="Data de abertura" type="date" error={errors.data_abertura?.message} {...register('data_abertura')} />
+        <Input label="Data de encerramento" type="date" error={errors.data_encerramento?.message} {...register('data_encerramento')} />
         <div className="space-y-1.5">
           <span className="block text-sm font-medium text-brand-950">Estado</span>
           <div className="flex min-h-[42px] items-center">
@@ -132,10 +137,6 @@ export function CourseForm({
           </div>
           <p className="text-xs text-slate-500">Calculado automaticamente a partir das datas.</p>
         </div>
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Input label="Data de abertura" type="date" error={errors.data_abertura?.message} {...register('data_abertura')} />
-        <Input label="Data de encerramento" type="date" error={errors.data_encerramento?.message} {...register('data_encerramento')} />
       </div>
       {initial && (
         <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-slate-200 px-3.5 py-3 text-sm">
