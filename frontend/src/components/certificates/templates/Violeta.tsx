@@ -91,11 +91,10 @@ export function VioletaTemplate({ cert }: TemplateProps) {
         </p>
       </div>
 
-      {/* Data e assinatura: linhas à mesma altura, texto por baixo. */}
-      <div className="absolute left-[230px] top-[668px] w-[240px] text-center">
-        <div className="h-px w-full bg-slate-400" />
-        <p className="mt-2 text-[15px] font-medium leading-tight">{t.dataEmissao}</p>
-        <p className="mt-1 text-[12px] uppercase tracking-widest text-slate-500">Data</p>
+      {/* Só a assinatura tem linha; a data é texto, alinhada com o nome e o cargo de quem assina. */}
+      <div className="absolute left-[230px] top-[668px] w-[240px] pt-[9px] text-center">
+        <p className="text-[15px] font-medium leading-tight">{t.dataEmissao}</p>
+        <p className="mt-1 text-[12px] uppercase tracking-widest text-slate-500">Data de emissão</p>
       </div>
       <div className="absolute right-[200px] top-[668px] w-[280px] text-center">
         <SignatureImage cert={cert} height={64} />

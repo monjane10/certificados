@@ -92,11 +92,10 @@ export function DouradoTemplate({ cert }: TemplateProps) {
         </p>
       </div>
 
-      {/* Data e assinatura: linhas à mesma altura, texto por baixo. */}
-      <div className="absolute left-[150px] top-[652px] w-[260px] text-center text-[15px]">
-        <div className="h-px w-full bg-[#B8892D]" />
-        <p className="mt-2 leading-tight">{t.dataEmissao}</p>
-        <p className="mt-1 text-[12px] uppercase tracking-[0.2em]" style={{ color: GOLD_DARK }}>Data</p>
+      {/* Só a assinatura tem linha; a data é texto, alinhada com o nome e o cargo de quem assina. */}
+      <div className="absolute left-[150px] top-[652px] w-[260px] pt-[9px] text-center text-[15px]">
+        <p className="leading-tight">{t.dataEmissao}</p>
+        <p className="mt-1 text-[12px] uppercase tracking-[0.2em]" style={{ color: GOLD_DARK }}>Data de emissão</p>
       </div>
       <div className="absolute right-[150px] top-[652px] w-[260px] text-center text-[15px]">
         <SignatureImage cert={cert} height={64} />
