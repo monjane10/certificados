@@ -3,9 +3,9 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
+import { CourseStatusBadge } from './CourseStatusBadge';
+import { courseStatusFromDates } from '../../lib/courseStatus';
 import {
-  COURSE_STATUSES,
-  COURSE_STATUS_LABELS,
   COURSE_TYPES,
   COURSE_TYPE_DESCRIPTIONS,
   COURSE_TYPE_LABELS,
@@ -25,7 +25,7 @@ const schema = z
     }),
     data_abertura: z.string().optional().or(z.literal('')),
     data_encerramento: z.string().optional().or(z.literal('')),
-    status: z.enum(COURSE_STATUSES as unknown as [string, ...string[]]),
+    cancelado: z.boolean(),
   })
   .refine(
     (d) => {
@@ -64,13 +64,19 @@ export function CourseForm({
       tipo: initial?.tipo,
       data_abertura: initial?.data_abertura ?? '',
       data_encerramento: initial?.data_encerramento ?? '',
-      status: initial?.status ?? 'planeado',
+      cancelado: initial?.cancelado ?? false,
     },
   });
 
   const busy = saving || isSubmitting;
   const tipo = watch('tipo');
   const toParticipacao = initial?.tipo === 'tecnico_profissional' && tipo === 'participacao';
+  // O estado não se escolhe: é calculado a partir das datas (só o cancelamento é manual).
+  const estado = courseStatusFromDates({
+    cancelado: watch('cancelado'),
+    data_abertura: watch('data_abertura'),
+    data_encerramento: watch('data_encerramento'),
+  });
 
   return (
     <form
@@ -120,27 +126,28 @@ export function CourseForm({
           placeholder="Ex.: 40"
         />
         <div className="space-y-1.5">
-          <label htmlFor="status" className="block text-sm font-medium text-brand-950">
-            Estado <span className="text-red-600">*</span>
-          </label>
-          <select
-            id="status"
-            {...register('status')}
-            className="w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
-          >
-            {COURSE_STATUSES.map((s) => (
-              <option key={s} value={s}>
-                {COURSE_STATUS_LABELS[s]}
-              </option>
-            ))}
-          </select>
-          {errors.status?.message && <p className="text-xs text-red-600">{errors.status.message}</p>}
+          <span className="block text-sm font-medium text-brand-950">Estado</span>
+          <div className="flex min-h-[42px] items-center">
+            <CourseStatusBadge status={estado} />
+          </div>
+          <p className="text-xs text-slate-500">Calculado automaticamente a partir das datas.</p>
         </div>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <Input label="Data de abertura" type="date" error={errors.data_abertura?.message} {...register('data_abertura')} />
         <Input label="Data de encerramento" type="date" error={errors.data_encerramento?.message} {...register('data_encerramento')} />
       </div>
+      {initial && (
+        <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-slate-200 px-3.5 py-3 text-sm">
+          <input type="checkbox" {...register('cancelado')} className="mt-0.5 accent-red-600" />
+          <span>
+            <span className="block font-semibold text-brand-950">Curso cancelado</span>
+            <span className="mt-0.5 block text-xs text-slate-500">
+              Um curso cancelado não avança de estado e não permite emitir certificados.
+            </span>
+          </span>
+        </label>
+      )}
       <div className="flex justify-end gap-2 pt-2">
         {onCancel && (
           <Button type="button" variant="secondary" onClick={onCancel} disabled={busy}>

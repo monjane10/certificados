@@ -213,6 +213,18 @@ Preencher:
     - a assinatura tem o fundo branco removido no browser antes do envio;
     - os quatro campos são copiados para o certificado na emissão: alterar o
       logótipo/assinatura não muda certificados já emitidos.
+13. Aplicar a migração `20261028000000_estado_automatico.sql` (DEPOIS da
+    anterior). O estado do curso deixa de ser escolhido à mão:
+    - a coluna `status` é substituída por `cancelado` (boolean); cursos que
+      estavam como «Cancelado» ficam com `cancelado = true`;
+    - o estado é calculado na leitura (`public.estado_curso`, fuso de
+      Maputo): cancelado → `cancelado`; a partir da data de encerramento
+      (inclusive) → `concluido`; a partir da abertura → `em_andamento`; sem
+      datas ou antes da abertura → `planeado`;
+    - a API continua a devolver `status` (campo calculado); no formulário só
+      existe a opção «Curso cancelado»;
+    - a emissão de certificados exige o estado calculado `concluido`, ou seja,
+      só a partir da data de encerramento.
 
 ## Execução
 

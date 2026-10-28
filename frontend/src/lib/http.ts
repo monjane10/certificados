@@ -9,12 +9,14 @@ async function authHeader(): Promise<Record<string, string>> {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
-type Json = { error?: string } & Record<string, unknown>;
+type Json = { error?: string; details?: Record<string, string[] | undefined> } & Record<string, unknown>;
 
 async function handle(res: Response): Promise<Json> {
   const json = (await res.json().catch(() => ({}))) as Json;
   if (!res.ok) {
-    throw new Error(json.error ?? `Erro ${res.status}`);
+    // Erros de validação: mostra a mensagem do primeiro campo em vez de só "Dados inválidos."
+    const detail = Object.values(json.details ?? {}).find((m) => m && m.length > 0)?.[0];
+    throw new Error(detail ?? json.error ?? `Erro ${res.status}`);
   }
   return json;
 }

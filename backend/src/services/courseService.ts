@@ -2,8 +2,9 @@ import { scopedClient } from '../config/supabase.js';
 import { DATES_INCOHERENT_MESSAGE, datesCoherent } from '../schemas/course.js';
 import type { CertificateTemplate, Course, CourseType, CourseWithCount, EnrollmentView, Trainee } from '../types/index.js';
 
+// status é o campo calculado public.estado_curso (datas + cancelado), não uma coluna.
 const COURSE_COLUMNS =
-  'id, nome, carga_horaria, tipo, modelo_certificado, codigo, data_abertura, data_encerramento, status, user_id, created_at, updated_at';
+  'id, nome, carga_horaria, tipo, modelo_certificado, codigo, data_abertura, data_encerramento, cancelado, status:estado_curso, user_id, created_at, updated_at';
 
 const NO_GRADES_MESSAGE = 'Cursos de participação não têm avaliação.';
 
@@ -25,11 +26,17 @@ export class HttpError extends Error {
   }
 }
 
+/** Regista no servidor o erro original do Supabase, que não é enviado ao cliente. */
+export function logDbError(context: string, error: { code?: string; message: string; details?: string | null; hint?: string | null }) {
+  console.error(`[db] ${context}`, { code: error.code, message: error.message, details: error.details, hint: error.hint });
+}
+
 /**
  * Erros levantados pelas nossas funções/triggers SQL (RAISE EXCEPTION, código
  * P0001) trazem uma mensagem pensada para o utilizador; os restantes não.
  */
 export function dbError(error: { code?: string; message: string }, status: number, fallback: string) {
+  if (error.code !== 'P0001') logDbError(fallback, error);
   return new HttpError(status, error.code === 'P0001' ? error.message : fallback);
 }
 
@@ -41,7 +48,7 @@ export async function requireOwnedCourse(accessToken: string, userId: string, co
     .select(COURSE_COLUMNS)
     .eq('id', courseId)
     .maybeSingle();
-  if (error) throw new HttpError(500, 'Falha ao consultar o curso.');
+  if (error) throw dbError(error, 500, 'Falha ao consultar o curso.');
   if (!data) throw new HttpError(404, 'Curso não encontrado.');
   const course = data as Course;
   if (course.user_id !== userId) throw new HttpError(404, 'Curso não encontrado.');
@@ -55,7 +62,7 @@ export async function listCourses(accessToken: string, userId: string): Promise<
     .select(`${COURSE_COLUMNS}, matriculas(count)`)
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
-  if (error) throw new HttpError(500, 'Falha ao listar cursos.');
+  if (error) throw dbError(error, 500, 'Falha ao listar cursos.');
   return ((data ?? []) as unknown as Array<Record<string, unknown>>).map((row) => {
     const nested = row['matriculas'] as Array<{ count: number }> | undefined;
     const rest: Record<string, unknown> = { ...row };
@@ -71,7 +78,7 @@ export interface CoursePayload {
   modelo_certificado: CertificateTemplate;
   data_abertura?: string | null;
   data_encerramento?: string | null;
-  status: string;
+  cancelado?: boolean;
 }
 
 export async function insertCourse(accessToken: string, userId: string, payload: CoursePayload): Promise<Course> {
@@ -87,7 +94,6 @@ export async function insertCourse(accessToken: string, userId: string, payload:
         codigo: generateCourseCode(),
         data_abertura: payload.data_abertura ?? null,
         data_encerramento: payload.data_encerramento ?? null,
-        status: payload.status,
         user_id: userId,
       })
       .select(COURSE_COLUMNS)
@@ -95,7 +101,15 @@ export async function insertCourse(accessToken: string, userId: string, payload:
     if (!error && data) return data as Course;
     // Colisão de código (unique) -> tenta outro; outro erro -> propaga.
     if (error && error.code === '23505' && error.message.includes('codigo')) continue;
-    if (error) throw new HttpError(400, 'Não foi possível criar o curso.');
+    if (error) {
+      logDbError('Não foi possível criar o curso.', error);
+      throw new HttpError(
+        error.code === '42703' || error.code === 'PGRST204' ? 500 : 400,
+        error.code === '42703' || error.code === 'PGRST204'
+          ? 'A base de dados não está actualizada: aplique as migrações em falta.'
+          : 'Não foi possível criar o curso.',
+      );
+    }
   }
   throw new HttpError(500, 'Não foi possível gerar um código único. Tente de novo.');
 }
@@ -136,7 +150,7 @@ export async function patchCourse(
   if (patch.modelo_certificado !== undefined) body['modelo_certificado'] = patch.modelo_certificado;
   if (patch.data_abertura !== undefined) body['data_abertura'] = patch.data_abertura ?? null;
   if (patch.data_encerramento !== undefined) body['data_encerramento'] = patch.data_encerramento ?? null;
-  if (patch.status !== undefined) body['status'] = patch.status;
+  if (patch.cancelado !== undefined) body['cancelado'] = patch.cancelado;
   const { data, error } = await client
     .from('cursos')
     .update(body)

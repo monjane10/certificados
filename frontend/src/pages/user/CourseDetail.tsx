@@ -203,7 +203,7 @@ export function CourseDetailPage() {
         tipo: values.tipo as Course['tipo'],
         data_abertura: values.data_abertura || null,
         data_encerramento: values.data_encerramento || null,
-        status: values.status as Course['status'],
+        cancelado: values.cancelado,
       });
       setCourse((prev) => (prev ? { ...updated, total_formandos: prev.total_formandos } : updated));
       toast.success('Curso actualizado com sucesso.');

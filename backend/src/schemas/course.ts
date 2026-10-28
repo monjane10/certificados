@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+/** O estado não é enviado pelo cliente: só cancelado é manual, o resto vem das datas. */
 export const COURSE_STATUSES = ['planeado', 'em_andamento', 'concluido', 'cancelado'] as const;
 export type CourseStatus = (typeof COURSE_STATUSES)[number];
 
@@ -64,7 +65,6 @@ export const createCourseSchema = z
     modelo_certificado: modeloCertificado.default('classico'),
     data_abertura: dateField,
     data_encerramento: dateField,
-    status: z.enum(COURSE_STATUSES).default('planeado'),
   })
   .strict()
   .refine(datesCoherent, {
@@ -80,10 +80,10 @@ export const updateCourseSchema = z
     modelo_certificado: modeloCertificado.optional(),
     data_abertura: dateUpdateField,
     data_encerramento: dateUpdateField,
-    status: z.enum(COURSE_STATUSES).optional(),
+    cancelado: z.boolean({ invalid_type_error: 'Cancelado deve ser verdadeiro ou falso' }).optional(),
   })
   .strict()
-  .refine((d) => d.nome !== undefined || d.carga_horaria !== undefined || d.status !== undefined
+  .refine((d) => d.nome !== undefined || d.carga_horaria !== undefined || d.cancelado !== undefined
     || d.tipo !== undefined || d.modelo_certificado !== undefined
     || d.data_abertura !== undefined || d.data_encerramento !== undefined, {
     message: 'Nada para actualizar.',

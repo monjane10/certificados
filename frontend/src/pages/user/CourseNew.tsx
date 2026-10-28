@@ -20,7 +20,6 @@ export function CourseNewPage() {
         tipo: values.tipo as Course['tipo'],
         data_abertura: values.data_abertura || undefined,
         data_encerramento: values.data_encerramento || undefined,
-        status: values.status as Course['status'],
       });
       toast.success(`Curso «${course.nome}» criado com sucesso (${course.codigo}).`);
       navigate(`/app/cursos/${course.id}`, { replace: true });

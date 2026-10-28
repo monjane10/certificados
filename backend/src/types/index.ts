@@ -34,6 +34,8 @@ export interface Course {
   codigo: string;
   data_abertura: string | null;
   data_encerramento: string | null;
+  cancelado: boolean;
+  /** Calculado na BD a partir das datas e de cancelado (public.estado_curso). */
   status: CourseStatus;
   user_id: string;
   created_at: string;

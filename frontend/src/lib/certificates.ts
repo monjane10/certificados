@@ -15,8 +15,11 @@ export function eligibilityOf(course: Pick<Course, 'tipo'>, e: EnrollmentView): 
 
 /** Motivo pelo qual o curso ainda não permite emitir (null se pode). */
 export function courseBlockReason(course: Pick<Course, 'status' | 'data_encerramento'>): string | null {
-  if (course.status !== 'concluido') return 'Só é possível emitir certificados quando o curso estiver «Concluído».';
+  if (course.status === 'cancelado') return 'Não é possível emitir certificados de um curso cancelado.';
   if (!course.data_encerramento) return 'Defina a data de encerramento do curso antes de emitir certificados.';
+  if (course.status !== 'concluido') {
+    return `Os certificados podem ser emitidos a partir da data de encerramento (${fmtDate(course.data_encerramento)}).`;
+  }
   return null;
 }
 

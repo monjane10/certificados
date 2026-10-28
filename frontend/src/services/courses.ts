@@ -9,12 +9,13 @@ export interface CourseInput {
   modelo_certificado?: Course['modelo_certificado'];
   data_abertura?: string;
   data_encerramento?: string;
-  status: Course['status'];
 }
 
+/** O estado não se envia: vem das datas; só o cancelamento é manual. */
 export type CourseUpdate = Partial<Omit<CourseInput, 'data_abertura' | 'data_encerramento'>> & {
   data_abertura?: string | null;
   data_encerramento?: string | null;
+  cancelado?: boolean;
 };
 
 export const courseService = {

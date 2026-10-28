@@ -64,7 +64,7 @@ export function CoursesPage() {
         tipo: values.tipo as Course['tipo'],
         data_abertura: values.data_abertura || null,
         data_encerramento: values.data_encerramento || null,
-        status: values.status as Course['status'],
+        cancelado: values.cancelado,
       });
       setCourses((prev) =>
         prev.map((c) => (c.id === updated.id ? { ...updated, total_formandos: c.total_formandos } : c)),
