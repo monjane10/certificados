@@ -228,6 +228,15 @@ Preencher:
 14. Aplicar a migração `20261028000001_remover_trigger_estado.sql` (DEPOIS da
     anterior). Remove o trigger `trg_cursos_estado`, criado fora das
     migrações, que ainda escrevia a coluna `status` e impedia criar cursos.
+15. Aplicar a migração `20261028000002_alinhar_cursos.sql` (DEPOIS da
+    anterior). Alinha `cursos` com a aplicação:
+    - remove a coluna `categoria` (criada fora das migrações), que duplicava
+      `tipo`; o tipo é a categoria do curso e define o preço (participação
+      100 MT, técnico-profissional 150 MT). A migração pára se algum curso
+      tiver categoria diferente do tipo;
+    - passa para as migrações a regra `cursos_datas_obrigatorias`: as duas
+      datas são obrigatórias (`NOT VALID`: cursos antigos sem datas têm de as
+      receber na próxima edição).
 
 ## Execução
 

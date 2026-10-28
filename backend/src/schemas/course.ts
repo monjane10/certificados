@@ -31,16 +31,19 @@ const nome = z
   .min(2, 'Nome do curso deve ter pelo menos 2 caracteres')
   .max(160, 'Nome demasiado longo');
 
-const dateString = z
-  .string()
-  .trim()
-  .regex(/^\d{4}-\d{2}-\d{2}$/, 'Data inválida (formato AAAA-MM-DD)')
-  .refine((s) => !Number.isNaN(Date.parse(s)), 'Data inválida');
+const dateString = (requiredMessage = 'Indique a data') =>
+  z
+    .string({ required_error: requiredMessage, invalid_type_error: 'Data inválida' })
+    .trim()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Data inválida (formato AAAA-MM-DD)')
+    .refine((s) => !Number.isNaN(Date.parse(s)), 'Data inválida');
 
-const dateField = dateString.optional().or(z.literal('').transform(() => undefined));
+/** As duas datas são obrigatórias: o estado do curso é calculado a partir delas. '' conta como em falta. */
+const dateField = (campo: string) =>
+  z.preprocess((v) => (v === '' || v === null ? undefined : v), dateString(`Indique a ${campo}`));
 
-/** No update, null ou '' limpam a data. */
-const dateUpdateField = dateString.nullable().optional().or(z.literal('').transform(() => null));
+/** No update a data é opcional (não muda), mas não pode ser apagada. */
+const dateUpdateField = dateString().optional();
 
 const cargaHoraria = z
   .number({ invalid_type_error: 'Carga horária deve ser um número' })
@@ -63,8 +66,8 @@ export const createCourseSchema = z
     carga_horaria: cargaHoraria,
     tipo,
     modelo_certificado: modeloCertificado.default('classico'),
-    data_abertura: dateField,
-    data_encerramento: dateField,
+    data_abertura: dateField('data de abertura'),
+    data_encerramento: dateField('data de encerramento'),
   })
   .strict()
   .refine(datesCoherent, {

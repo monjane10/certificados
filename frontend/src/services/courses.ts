@@ -7,14 +7,13 @@ export interface CourseInput {
   tipo: Course['tipo'];
   /** Opcional na criação: o backend usa 'classico' por defeito. */
   modelo_certificado?: Course['modelo_certificado'];
-  data_abertura?: string;
-  data_encerramento?: string;
+  /** Obrigatórias: o estado é calculado a partir delas. */
+  data_abertura: string;
+  data_encerramento: string;
 }
 
 /** O estado não se envia: vem das datas; só o cancelamento é manual. */
-export type CourseUpdate = Partial<Omit<CourseInput, 'data_abertura' | 'data_encerramento'>> & {
-  data_abertura?: string | null;
-  data_encerramento?: string | null;
+export type CourseUpdate = Partial<CourseInput> & {
   cancelado?: boolean;
 };
 
@@ -34,7 +33,7 @@ export const courseService = {
     const json = await req('/api/courses', { method: 'POST', body: payload });
     return json['course'] as Course;
   },
-  /** null nas datas limpa o valor guardado. */
+  /** As datas podem ser alteradas mas não apagadas. */
   async update(id: string, patch: CourseUpdate): Promise<Course> {
     const json = await req(`/api/courses/${id}`, { method: 'PATCH', body: patch });
     return json['course'] as Course;

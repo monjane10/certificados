@@ -201,8 +201,8 @@ export function CourseDetailPage() {
         nome: values.nome.trim(),
         carga_horaria: values.carga_horaria,
         tipo: values.tipo as Course['tipo'],
-        data_abertura: values.data_abertura || null,
-        data_encerramento: values.data_encerramento || null,
+        data_abertura: values.data_abertura,
+        data_encerramento: values.data_encerramento,
         cancelado: values.cancelado,
       });
       setCourse((prev) => (prev ? { ...updated, total_formandos: prev.total_formandos } : updated));

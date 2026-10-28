@@ -18,8 +18,8 @@ export function CourseNewPage() {
         nome: values.nome.trim(),
         carga_horaria: values.carga_horaria,
         tipo: values.tipo as Course['tipo'],
-        data_abertura: values.data_abertura || undefined,
-        data_encerramento: values.data_encerramento || undefined,
+        data_abertura: values.data_abertura,
+        data_encerramento: values.data_encerramento,
       });
       toast.success(`Curso «${course.nome}» criado com sucesso (${course.codigo}).`);
       navigate(`/app/cursos/${course.id}`, { replace: true });

@@ -23,8 +23,9 @@ const schema = z
     tipo: z.enum(COURSE_TYPES as unknown as [string, ...string[]], {
       errorMap: () => ({ message: 'Indique o tipo de curso' }),
     }),
-    data_abertura: z.string().optional().or(z.literal('')),
-    data_encerramento: z.string().optional().or(z.literal('')),
+    // Obrigatórias: o estado do curso é calculado a partir delas.
+    data_abertura: z.string().min(1, 'Indique a data de abertura'),
+    data_encerramento: z.string().min(1, 'Indique a data de encerramento'),
     cancelado: z.boolean(),
   })
   .refine(
@@ -128,8 +129,8 @@ export function CourseForm({
           {...register('carga_horaria')}
           placeholder="Ex.: 40"
         />
-        <Input label="Data de abertura" type="date" error={errors.data_abertura?.message} {...register('data_abertura')} />
-        <Input label="Data de encerramento" type="date" error={errors.data_encerramento?.message} {...register('data_encerramento')} />
+        <Input label="Data de abertura" required type="date" error={errors.data_abertura?.message} {...register('data_abertura')} />
+        <Input label="Data de encerramento" required type="date" error={errors.data_encerramento?.message} {...register('data_encerramento')} />
         <div className="space-y-1.5">
           <span className="block text-sm font-medium text-brand-950">Estado</span>
           <div className="flex min-h-[42px] items-center">
