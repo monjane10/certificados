@@ -244,6 +244,10 @@ Preencher:
     matrículas), já sem depender de `categoria`. Remove
     `actualizar_estados_cursos`/`calcular_estado_curso`, que escreviam a
     coluna `status` (e desagenda-as do pg_cron, se estiverem agendadas).
+17. Aplicar a migração `20261028000004_matriculas_sem_nota_por_defeito.sql`
+    (DEPOIS da anterior). Retira o valor por defeito de
+    `matriculas.avaliacao` (definido fora das migrações), que impedia
+    matricular formandos já registados em cursos de participação.
 
 ## Execução
 

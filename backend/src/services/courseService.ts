@@ -332,7 +332,9 @@ export async function enrollExisting(
   const client = scopedClient(accessToken);
   const { data, error } = await client
     .from('matriculas')
-    .insert({ formando_id: formandoId, curso_id: courseId })
+    // avaliacao explícita: não depender do default da coluna (uma nota por
+    // defeito seria recusada em cursos de participação).
+    .insert({ formando_id: formandoId, curso_id: courseId, avaliacao: null })
     .select(ENROLL_VIEW)
     .maybeSingle();
   if (error) {
