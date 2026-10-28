@@ -96,9 +96,11 @@ export async function insertCourse(accessToken: string, userId: string, payload:
         data_encerramento: payload.data_encerramento ?? null,
         user_id: userId,
       })
-      .select(COURSE_COLUMNS)
+      // Só o id: o campo calculado (status:estado_curso) não está disponível na
+      // resposta de um insert; o curso completo é lido a seguir.
+      .select('id')
       .maybeSingle();
-    if (!error && data) return data as Course;
+    if (!error && data) return requireOwnedCourse(accessToken, userId, data.id as string);
     // Colisão de código (unique) -> tenta outro; outro erro -> propaga.
     if (error && error.code === '23505' && error.message.includes('codigo')) continue;
     if (error) {
@@ -156,11 +158,11 @@ export async function patchCourse(
     .update(body)
     .eq('id', courseId)
     .eq('user_id', userId)
-    .select(COURSE_COLUMNS)
+    .select('id') // ver insertCourse: o estado calculado é lido a seguir
     .maybeSingle();
   if (error) throw dbError(error, 409, 'Não foi possível actualizar o curso.');
   if (!data) throw new HttpError(404, 'Curso não encontrado.');
-  return data as Course;
+  return requireOwnedCourse(accessToken, userId, courseId);
 }
 
 /**
