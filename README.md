@@ -225,6 +225,9 @@ Preencher:
       existe a opção «Curso cancelado»;
     - a emissão de certificados exige o estado calculado `concluido`, ou seja,
       só a partir da data de encerramento.
+14. Aplicar a migração `20261028000001_remover_trigger_estado.sql` (DEPOIS da
+    anterior). Remove o trigger `trg_cursos_estado`, criado fora das
+    migrações, que ainda escrevia a coluna `status` e impedia criar cursos.
 
 ## Execução
 
