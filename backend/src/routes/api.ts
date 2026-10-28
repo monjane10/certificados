@@ -26,8 +26,10 @@ import {
   patchCourseById,
   patchEnrollmentById,
   patchTraineeById,
+  postCloseCourse,
   postCourse,
   postEnrollment,
+  postReopenCourse,
 } from '../controllers/courseController.js';
 import {
   getMe,
@@ -55,6 +57,9 @@ router.post('/courses', sensitiveLimiter, authenticate, validateBody(createCours
 router.get('/courses/:id', authenticate, getCourse);
 router.patch('/courses/:id', sensitiveLimiter, authenticate, validateBody(updateCourseSchema), patchCourseById);
 router.delete('/courses/:id', sensitiveLimiter, authenticate, deleteCourseById);
+// Encerrar congela o curso e as matrículas; só depois se emitem certificados.
+router.post('/courses/:id/close', sensitiveLimiter, authenticate, postCloseCourse);
+router.post('/courses/:id/reopen', sensitiveLimiter, authenticate, postReopenCourse);
 
 // Sprint 2 (N:N) - Formandos (registo central) e matrículas.
 // O curso_id vem sempre do path + propriedade verificada; nunca do corpo.

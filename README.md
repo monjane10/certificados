@@ -248,6 +248,26 @@ Preencher:
     (DEPOIS da anterior). Retira o valor por defeito de
     `matriculas.avaliacao` (definido fora das migrações), que impedia
     matricular formandos já registados em cursos de participação.
+18. Aplicar a migração `20261028000005_encerrar_e_emitir.sql` (DEPOIS da
+    anterior). Fluxo do curso: Planeado → Em andamento → Concluído (pelas
+    datas) → **Encerrar** → Encerrado → **Emitir certificados**.
+    - o estado calculado ganha `encerrado`;
+    - encerrar exige curso concluído, não cancelado, com formandos e, nos
+      técnico-profissionais, todas as notas lançadas; congela o curso e as
+      matrículas;
+    - `reabrir_curso` volta a permitir alterações (certificados emitidos
+      mantêm-se);
+    - emitir certificados exige o curso encerrado.
+
+### Recriar o domínio do zero
+
+`supabase/reset/recriar_dominio.sql` apaga **todos** os cursos, formandos,
+matrículas e certificados e recria tabelas, funções, triggers e políticas
+exactamente como nas migrações (de `20261013000000` em diante), incluindo o
+que tenha sido criado fora delas. Não toca em `profiles` (nem no primeiro
+admin), em `auth.users` nem no Storage. Corre numa única transacção: se algum
+passo falhar, nada muda. É gerado a partir de `supabase/migrations/`; se as
+migrações mudarem, gere-o de novo em vez de o editar à mão.
 
 ## Execução
 

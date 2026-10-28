@@ -4,6 +4,7 @@ const dot: Record<CourseStatus, string> = {
   planeado: 'bg-slate-400',
   em_andamento: 'bg-brand-500',
   concluido: 'bg-accent-500',
+  encerrado: 'bg-brand-950',
   cancelado: 'bg-red-500',
 };
 
@@ -11,6 +12,7 @@ const styles: Record<CourseStatus, string> = {
   planeado: 'bg-slate-100 text-slate-700',
   em_andamento: 'bg-brand-50 text-brand-900',
   concluido: 'bg-accent-100 text-accent-700',
+  encerrado: 'bg-brand-100 text-brand-950',
   cancelado: 'bg-red-100 text-red-700',
 };
 

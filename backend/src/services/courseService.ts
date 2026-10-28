@@ -4,7 +4,7 @@ import type { CertificateTemplate, Course, CourseType, CourseWithCount, Enrollme
 
 // status é o campo calculado public.estado_curso (datas + cancelado), não uma coluna.
 const COURSE_COLUMNS =
-  'id, nome, carga_horaria, tipo, modelo_certificado, codigo, data_abertura, data_encerramento, cancelado, status:estado_curso, user_id, created_at, updated_at';
+  'id, nome, carga_horaria, tipo, modelo_certificado, codigo, data_abertura, data_encerramento, cancelado, encerrado_em, status:estado_curso, user_id, created_at, updated_at';
 
 const NO_GRADES_MESSAGE = 'Cursos de participação não têm avaliação.';
 
@@ -162,6 +162,25 @@ export async function patchCourse(
     .maybeSingle();
   if (error) throw dbError(error, 409, 'Não foi possível actualizar o curso.');
   if (!data) throw new HttpError(404, 'Curso não encontrado.');
+  return requireOwnedCourse(accessToken, userId, courseId);
+}
+
+/**
+ * Encerra o curso (função SQL encerrar_curso): só concluídos, com formandos e,
+ * nos técnico-profissionais, com todas as notas. Depois fica só de leitura.
+ */
+export async function closeCourse(accessToken: string, userId: string, courseId: string): Promise<Course> {
+  await requireOwnedCourse(accessToken, userId, courseId);
+  const { error } = await scopedClient(accessToken).rpc('encerrar_curso', { p_curso_id: courseId });
+  if (error) throw dbError(error, 409, 'Não foi possível encerrar o curso.');
+  return requireOwnedCourse(accessToken, userId, courseId);
+}
+
+/** Reabre um curso encerrado (função SQL reabrir_curso) para voltar a permitir alterações. */
+export async function reopenCourse(accessToken: string, userId: string, courseId: string): Promise<Course> {
+  await requireOwnedCourse(accessToken, userId, courseId);
+  const { error } = await scopedClient(accessToken).rpc('reabrir_curso', { p_curso_id: courseId });
+  if (error) throw dbError(error, 409, 'Não foi possível reabrir o curso.');
   return requireOwnedCourse(accessToken, userId, courseId);
 }
 

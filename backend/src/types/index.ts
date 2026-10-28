@@ -19,7 +19,7 @@ export interface AuthContextUser {
   profile: Profile | null;
 }
 
-export type CourseStatus = 'planeado' | 'em_andamento' | 'concluido' | 'cancelado';
+export type CourseStatus = 'planeado' | 'em_andamento' | 'concluido' | 'encerrado' | 'cancelado';
 
 export type CourseType = 'participacao' | 'tecnico_profissional';
 
@@ -35,6 +35,8 @@ export interface Course {
   data_abertura: string | null;
   data_encerramento: string | null;
   cancelado: boolean;
+  /** Preenchido ao encerrar: o curso e as matrículas ficam só de leitura. */
+  encerrado_em: string | null;
   /** Calculado na BD a partir das datas e de cancelado (public.estado_curso). */
   status: CourseStatus;
   user_id: string;

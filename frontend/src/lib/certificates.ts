@@ -16,9 +16,17 @@ export function eligibilityOf(course: Pick<Course, 'tipo'>, e: EnrollmentView): 
 /** Motivo pelo qual o curso ainda não permite emitir (null se pode). */
 export function courseBlockReason(course: Pick<Course, 'status' | 'data_encerramento'>): string | null {
   if (course.status === 'cancelado') return 'Não é possível emitir certificados de um curso cancelado.';
-  if (!course.data_encerramento) return 'Defina a data de encerramento do curso antes de emitir certificados.';
-  if (course.status !== 'concluido') {
-    return `Os certificados podem ser emitidos a partir da data de encerramento (${fmtDate(course.data_encerramento)}).`;
+  if (course.status === 'encerrado') return null;
+  if (course.status === 'concluido') return 'Encerre o curso para poder emitir os certificados.';
+  return `O curso pode ser encerrado a partir da data de encerramento (${fmtDate(course.data_encerramento)}).`;
+}
+
+/** Motivo pelo qual o curso concluído ainda não pode ser encerrado (null se pode). */
+export function closeBlockReason(course: Pick<Course, 'tipo'>, enrollments: EnrollmentView[]): string | null {
+  if (enrollments.length === 0) return 'Matricule formandos antes de encerrar o curso.';
+  if (course.tipo === 'tecnico_profissional') {
+    const semNota = enrollments.filter((e) => e.avaliacao === null).length;
+    if (semNota > 0) return `Lance a nota de todos os formandos antes de encerrar (${semNota} sem nota).`;
   }
   return null;
 }

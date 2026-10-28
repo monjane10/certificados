@@ -16,14 +16,15 @@ export interface Profile {
   updated_at: string;
 }
 
-export type CourseStatus = 'planeado' | 'em_andamento' | 'concluido' | 'cancelado';
+export type CourseStatus = 'planeado' | 'em_andamento' | 'concluido' | 'encerrado' | 'cancelado';
 
-export const COURSE_STATUSES: CourseStatus[] = ['planeado', 'em_andamento', 'concluido', 'cancelado'];
+export const COURSE_STATUSES: CourseStatus[] = ['planeado', 'em_andamento', 'concluido', 'encerrado', 'cancelado'];
 
 export const COURSE_STATUS_LABELS: Record<CourseStatus, string> = {
   planeado: 'Planeado',
   em_andamento: 'Em andamento',
   concluido: 'Concluído',
+  encerrado: 'Encerrado',
   cancelado: 'Cancelado',
 };
 
@@ -57,6 +58,8 @@ export interface Course {
   data_abertura: string | null;
   data_encerramento: string | null;
   cancelado: boolean;
+  /** Preenchido ao encerrar: o curso e as matrículas ficam só de leitura. */
+  encerrado_em: string | null;
   /** Calculado no servidor a partir das datas e de cancelado. */
   status: CourseStatus;
   user_id: string;

@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import { enrollExistingSchema, enrollNewSchema } from '../schemas/trainee.js';
 import {
   HttpError,
+  closeCourse,
   enrollExisting,
   enrollNew,
   insertCourse,
@@ -13,6 +14,7 @@ import {
   patchTrainee,
   removeCourse,
   removeEnrollment,
+  reopenCourse,
   requireOwnedCourse,
 } from '../services/courseService.js';
 
@@ -83,6 +85,32 @@ export async function patchCourseById(req: Request, res: Response) {
     res.json({ course });
   } catch (e) {
     fail(res, e, 'Não foi possível actualizar o curso.');
+  }
+}
+
+export async function postCloseCourse(req: Request, res: Response) {
+  if (!UUID_RE.test(req.params['id'] ?? '')) {
+    badId(res);
+    return;
+  }
+  try {
+    const { token, userId } = ctx(req);
+    res.json({ course: await closeCourse(token, userId, req.params['id'] as string) });
+  } catch (e) {
+    fail(res, e, 'Não foi possível encerrar o curso.');
+  }
+}
+
+export async function postReopenCourse(req: Request, res: Response) {
+  if (!UUID_RE.test(req.params['id'] ?? '')) {
+    badId(res);
+    return;
+  }
+  try {
+    const { token, userId } = ctx(req);
+    res.json({ course: await reopenCourse(token, userId, req.params['id'] as string) });
+  } catch (e) {
+    fail(res, e, 'Não foi possível reabrir o curso.');
   }
 }
 

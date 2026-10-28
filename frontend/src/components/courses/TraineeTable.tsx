@@ -14,6 +14,8 @@ interface Props {
   onEditPersonal: (e: EnrollmentView) => void;
   onEditGrade: (e: EnrollmentView) => void;
   onDelete: (e: EnrollmentView) => void;
+  /** Curso encerrado: nota e remoção bloqueadas (os dados pessoais continuam editáveis). */
+  encerrado?: boolean;
 }
 
 const actionClass =
@@ -22,6 +24,12 @@ const dangerClass =
   'rounded-control px-2.5 py-1.5 text-muted hover:bg-red-50 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent';
 
 const LOCKED_HINT = 'Tem certificado emitido. Anule-o em Certificados para alterar.';
+const CLOSED_HINT = 'Curso encerrado. Reabra o curso para alterar.';
+
+function lockHint(e: EnrollmentView, encerrado: boolean): string | undefined {
+  if (encerrado) return CLOSED_HINT;
+  return e.certificado ? LOCKED_HINT : undefined;
+}
 
 /** Estado do certificado da matrícula (emitido, pronto ou motivo de exclusão). */
 function CertificateStatus({ enrollment, comNotas }: { enrollment: EnrollmentView; comNotas: boolean }) {
@@ -71,7 +79,7 @@ export function TraineeTable(props: Props) {
   );
 }
 
-function TraineeRows({ enrollments, comNotas, onEditPersonal, onEditGrade, onDelete }: Props) {
+function TraineeRows({ enrollments, comNotas, onEditPersonal, onEditGrade, onDelete, encerrado = false }: Props) {
   return (
     <div className="overflow-hidden rounded-card border border-line bg-white">
       <table className="w-full text-left text-sm">
@@ -112,8 +120,8 @@ function TraineeRows({ enrollments, comNotas, onEditPersonal, onEditGrade, onDel
                   {comNotas && (
                     <button
                       onClick={() => onEditGrade(t)}
-                      disabled={Boolean(t.certificado)}
-                      title={t.certificado ? LOCKED_HINT : undefined}
+                      disabled={encerrado || Boolean(t.certificado)}
+                      title={lockHint(t, encerrado)}
                       className={actionClass}
                     >
                       Nota
@@ -121,8 +129,8 @@ function TraineeRows({ enrollments, comNotas, onEditPersonal, onEditGrade, onDel
                   )}
                   <button
                     onClick={() => onDelete(t)}
-                    disabled={Boolean(t.certificado)}
-                    title={t.certificado ? LOCKED_HINT : undefined}
+                    disabled={encerrado || Boolean(t.certificado)}
+                    title={lockHint(t, encerrado)}
                     className={dangerClass}
                   >
                     Remover
@@ -137,7 +145,7 @@ function TraineeRows({ enrollments, comNotas, onEditPersonal, onEditGrade, onDel
   );
 }
 
-function TraineeCards({ enrollments, comNotas, onEditPersonal, onEditGrade, onDelete }: Props) {
+function TraineeCards({ enrollments, comNotas, onEditPersonal, onEditGrade, onDelete, encerrado = false }: Props) {
   return (
     <ul className="grid gap-3 md:grid-cols-2">
       {enrollments.map((t) => (
@@ -181,8 +189,8 @@ function TraineeCards({ enrollments, comNotas, onEditPersonal, onEditGrade, onDe
             {comNotas && (
               <button
                 onClick={() => onEditGrade(t)}
-                disabled={Boolean(t.certificado)}
-                title={t.certificado ? LOCKED_HINT : undefined}
+                disabled={encerrado || Boolean(t.certificado)}
+                title={lockHint(t, encerrado)}
                 className="border-x border-line py-2.5 text-ink hover:bg-soft disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Nota
@@ -190,8 +198,8 @@ function TraineeCards({ enrollments, comNotas, onEditPersonal, onEditGrade, onDe
             )}
             <button
               onClick={() => onDelete(t)}
-              disabled={Boolean(t.certificado)}
-              title={t.certificado ? LOCKED_HINT : undefined}
+              disabled={encerrado || Boolean(t.certificado)}
+              title={lockHint(t, encerrado)}
               className={`py-2.5 text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40 ${comNotas ? '' : 'border-l border-line'}`}
             >
               Remover

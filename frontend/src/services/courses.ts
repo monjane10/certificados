@@ -38,6 +38,16 @@ export const courseService = {
     const json = await req(`/api/courses/${id}`, { method: 'PATCH', body: patch });
     return json['course'] as Course;
   },
+  /** Encerra o curso: fica só de leitura e passa a permitir emitir certificados. */
+  async close(id: string): Promise<Course> {
+    const json = await req(`/api/courses/${id}/close`, { method: 'POST' });
+    return json['course'] as Course;
+  },
+  /** Reabre um curso encerrado para voltar a permitir alterações. */
+  async reopen(id: string): Promise<Course> {
+    const json = await req(`/api/courses/${id}/reopen`, { method: 'POST' });
+    return json['course'] as Course;
+  },
   async remove(id: string): Promise<{ removedMatriculas: number; removedOrphanFormandos: number }> {
     const json = await req(`/api/courses/${id}`, { method: 'DELETE' });
     return {

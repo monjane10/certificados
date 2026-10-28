@@ -51,6 +51,8 @@ export function CourseDetailPage() {
   const [removing, setRemoving] = useState(false);
   const [confirmEmit, setConfirmEmit] = useState(false);
   const [emitting, setEmitting] = useState(false);
+  const [confirmClose, setConfirmClose] = useState<'encerrar' | 'reabrir' | null>(null);
+  const [closing, setClosing] = useState(false);
   const [choosingTemplate, setChoosingTemplate] = useState(false);
   const [savingTemplate, setSavingTemplate] = useState(false);
 
@@ -236,6 +238,26 @@ export function CourseDetailPage() {
     }
   }
 
+  async function handleCloseOrReopen() {
+    if (!confirmClose || closing) return;
+    setClosing(true);
+    try {
+      const updated =
+        confirmClose === 'encerrar' ? await courseService.close(id) : await courseService.reopen(id);
+      setCourse((prev) => (prev ? { ...updated, total_formandos: prev.total_formandos } : updated));
+      toast.success(
+        confirmClose === 'encerrar'
+          ? 'Curso encerrado. Já pode emitir os certificados.'
+          : 'Curso reaberto. Os dados e as notas voltam a poder ser alterados.',
+      );
+      setConfirmClose(null);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Falha ao actualizar o curso.');
+    } finally {
+      setClosing(false);
+    }
+  }
+
   async function handleTemplate(modelo: CertificateTemplate) {
     if (savingTemplate) return;
     setSavingTemplate(true);
@@ -285,6 +307,7 @@ export function CourseDetailPage() {
     );
 
   const comNotas = course.tipo === 'tecnico_profissional';
+  const encerrado = course.status === 'encerrado';
   const elig = countEligibility(course, enrollments);
   const emitDescription = comNotas
     ? `Serão emitidos ${elig.elegivel} certificado(s) técnico-profissional(is) para os formandos com nota igual ou superior a ${NOTA_MINIMA_APROVACAO}.` +
@@ -315,14 +338,17 @@ export function CourseDetailPage() {
               {fmtPeriod(course.data_abertura, course.data_encerramento)}
             </p>
           </div>
-          <div className="grid w-full shrink-0 grid-cols-2 gap-2 sm:flex sm:w-auto">
-            <Button variant="secondary" onClick={() => setEditingCourse(true)}>
-              Editar curso
-            </Button>
-            <Button variant="danger" onClick={() => setConfirmDeleteCourse(true)}>
-              Excluir
-            </Button>
-          </div>
+          {/* Curso encerrado é só de leitura: para editar ou excluir é preciso reabri-lo. */}
+          {!encerrado && (
+            <div className="grid w-full shrink-0 grid-cols-2 gap-2 sm:flex sm:w-auto">
+              <Button variant="secondary" onClick={() => setEditingCourse(true)}>
+                Editar curso
+              </Button>
+              <Button variant="danger" onClick={() => setConfirmDeleteCourse(true)}>
+                Excluir
+              </Button>
+            </div>
+          )}
         </div>
       </Card>
 
@@ -330,6 +356,8 @@ export function CourseDetailPage() {
         course={course}
         enrollments={enrollments}
         onEmit={() => setConfirmEmit(true)}
+        onClose={() => setConfirmClose('encerrar')}
+        onReopen={() => setConfirmClose('reabrir')}
         onChooseTemplate={() => setChoosingTemplate(true)}
       />
 
@@ -343,9 +371,11 @@ export function CourseDetailPage() {
               : 'Curso de participação: sem avaliação.'}
           </p>
         </div>
-        <Button onClick={() => setShowEnroll(true)} className="w-full sm:w-auto">
-          Registar formando
-        </Button>
+        {!encerrado && (
+          <Button onClick={() => setShowEnroll(true)} className="w-full sm:w-auto">
+            Registar formando
+          </Button>
+        )}
       </div>
 
       <input
@@ -365,7 +395,7 @@ export function CourseDetailPage() {
               : 'Nenhum formando corresponde à pesquisa.'
           }
           action={
-            enrollments.length === 0 ? (
+            enrollments.length === 0 && !encerrado ? (
               <Button onClick={() => setShowEnroll(true)}>Registar formando</Button>
             ) : undefined
           }
@@ -377,6 +407,7 @@ export function CourseDetailPage() {
           onEditPersonal={setEditingPersonal}
           onEditGrade={setEditingGrade}
           onDelete={setDeleting}
+          encerrado={encerrado}
         />
       )}
 
@@ -455,6 +486,21 @@ export function CourseDetailPage() {
         loading={emitting}
         onConfirm={handleEmit}
         onCancel={() => (emitting ? null : setConfirmEmit(false))}
+      />
+
+      <ConfirmDialog
+        open={confirmClose !== null}
+        title={confirmClose === 'reabrir' ? 'Reabrir curso' : 'Encerrar curso'}
+        description={
+          confirmClose === 'reabrir'
+            ? `Reabrir o curso «${course.nome}»? Os dados do curso, as matrículas e as notas voltam a poder ser alterados. Os certificados já emitidos mantêm-se; para os emitir em falta, encerre o curso outra vez.`
+            : `Encerrar o curso «${course.nome}» com ${enrollments.length} formando(s)? Os dados do curso, as matrículas e as notas ficam congelados e passa a poder emitir os certificados. Se for preciso corrigir algo, pode reabrir o curso.`
+        }
+        confirmLabel={confirmClose === 'reabrir' ? 'Reabrir curso' : 'Encerrar curso'}
+        danger={false}
+        loading={closing}
+        onConfirm={handleCloseOrReopen}
+        onCancel={() => (closing ? null : setConfirmClose(null))}
       />
 
       <ConfirmDialog

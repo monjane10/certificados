@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 /** O estado não é enviado pelo cliente: só cancelado é manual, o resto vem das datas. */
-export const COURSE_STATUSES = ['planeado', 'em_andamento', 'concluido', 'cancelado'] as const;
+export const COURSE_STATUSES = ['planeado', 'em_andamento', 'concluido', 'encerrado', 'cancelado'] as const;
 export type CourseStatus = (typeof COURSE_STATUSES)[number];
 
 /** participacao: sem notas; tecnico_profissional: nota 0-20 por matrícula. */
