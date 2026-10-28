@@ -366,6 +366,38 @@ export async function enrollExisting(
   return toView(data as unknown as EnrollmentRow);
 }
 
+/**
+ * Matricula vários formandos já registados num só insert (tudo ou nada).
+ * Os que já estão neste curso são ignorados; devolve só as matrículas novas.
+ */
+export async function enrollMany(
+  accessToken: string,
+  userId: string,
+  courseId: string,
+  formandoIds: string[],
+): Promise<EnrollmentView[]> {
+  await requireOwnedCourse(accessToken, userId, courseId);
+  const ids = [...new Set(formandoIds)];
+  const client = scopedClient(accessToken);
+  const { data: owned, error: ownedError } = await client
+    .from('formandos')
+    .select('id')
+    .eq('user_id', userId)
+    .in('id', ids);
+  if (ownedError) throw dbError(ownedError, 500, 'Falha ao consultar os formandos.');
+  if ((owned ?? []).length !== ids.length) throw new HttpError(404, 'Formando não encontrado.');
+  const { data, error } = await client
+    .from('matriculas')
+    // avaliacao explícita: não depender do default da coluna (ver enrollExisting).
+    .upsert(
+      ids.map((id) => ({ formando_id: id, curso_id: courseId, avaliacao: null })),
+      { onConflict: 'formando_id,curso_id', ignoreDuplicates: true },
+    )
+    .select(ENROLL_VIEW);
+  if (error) throw dbError(error, 400, 'Não foi possível matricular os formandos.');
+  return ((data ?? []) as unknown as EnrollmentRow[]).map(toView);
+}
+
 /** Cria um novo formando e matricula-o no curso (com avaliação opcional). */
 export async function enrollNew(
   accessToken: string,

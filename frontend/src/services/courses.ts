@@ -75,10 +75,10 @@ export const traineeService = {
     const json = await req(`/api/courses/${courseId}/trainees`, { method: 'POST', body: payload });
     return json['enrollment'] as EnrollmentView;
   },
-  /** Matricula um formando já registado (409 se já matriculado). */
-  async enrollExisting(courseId: string, formandoId: string): Promise<EnrollmentView> {
-    const json = await req(`/api/courses/${courseId}/trainees`, { method: 'POST', body: { formando_id: formandoId } });
-    return json['enrollment'] as EnrollmentView;
+  /** Matricula vários formandos já registados de uma vez; os já matriculados são ignorados. */
+  async enrollMany(courseId: string, formandoIds: string[]): Promise<EnrollmentView[]> {
+    const json = await req(`/api/courses/${courseId}/trainees`, { method: 'POST', body: { formando_ids: formandoIds } });
+    return (json['enrollments'] as EnrollmentView[]) ?? [];
   },
   /** Actualiza dados pessoais (reflecte-se em todos os cursos); null limpa o campo. */
   async updatePersonal(

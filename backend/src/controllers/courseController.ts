@@ -1,9 +1,10 @@
 import type { Request, Response } from 'express';
-import { enrollExistingSchema, enrollNewSchema } from '../schemas/trainee.js';
+import { enrollExistingSchema, enrollManySchema, enrollNewSchema } from '../schemas/trainee.js';
 import {
   HttpError,
   closeCourse,
   enrollExisting,
+  enrollMany,
   enrollNew,
   insertCourse,
   listCourses,
@@ -179,6 +180,16 @@ export async function postEnrollment(req: Request, res: Response) {
     const { token, userId } = ctx(req);
     const courseId = req.params['id'] as string;
     // curso_id do corpo é ignorado: vem do path + propriedade verificada.
+    if (req.body !== null && typeof req.body === 'object' && 'formando_ids' in req.body) {
+      const parsed = enrollManySchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({ error: 'Dados inválidos.', details: parsed.error.flatten().fieldErrors });
+        return;
+      }
+      const enrollments = await enrollMany(token, userId, courseId, parsed.data.formando_ids);
+      res.status(201).json({ enrollments });
+      return;
+    }
     if (req.body !== null && typeof req.body === 'object' && 'formando_id' in req.body) {
       const parsed = enrollExistingSchema.safeParse(req.body);
       if (!parsed.success) {

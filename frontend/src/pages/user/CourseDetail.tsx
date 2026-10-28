@@ -117,14 +117,20 @@ export function CourseDetailPage() {
     }
   }
 
-  async function handleEnrollExisting(t: Trainee) {
-    if (saving) return;
+  async function handleEnrollExisting(trainees: Trainee[]) {
+    if (saving || trainees.length === 0) return;
     setSaving(true);
     try {
-      const created = await traineeService.enrollExisting(id, t.id);
-      setEnrollments((prev) => [created, ...prev]);
-      bumpTotal(1);
-      toast.success(`Formando «${created.nome}» matriculado com sucesso.`);
+      const created = await traineeService.enrollMany(id, trainees.map((t) => t.id));
+      setEnrollments((prev) => [...created, ...prev]);
+      bumpTotal(created.length);
+      const ignorados = trainees.length - created.length;
+      toast.success(
+        (created.length === 1
+          ? `Formando «${created[0].nome}» matriculado com sucesso.`
+          : `${created.length} formandos matriculados com sucesso.`) +
+          (ignorados > 0 ? ` ${ignorados} já estava(m) matriculado(s).` : ''),
+      );
       setShowEnroll(false);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Falha ao matricular o formando.');
@@ -415,6 +421,7 @@ export function CourseDetailPage() {
         <EnrollPanel
           saving={saving}
           comNotas={comNotas}
+          enrolledIds={enrollments.map((e) => e.formando_id)}
           onEnrollNew={handleEnrollNew}
           onEnrollExisting={handleEnrollExisting}
           onCancel={() => setShowEnroll(false)}

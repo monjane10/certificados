@@ -49,6 +49,16 @@ export const updateTraineePersonalSchema = z
 /** Matricular um formando JÁ registado (propriedade verificada no serviço). */
 export const enrollExistingSchema = z.object({ formando_id: uuidField }).strict();
 
+/** Matricular VÁRIOS formandos já registados de uma vez (selecção múltipla). */
+export const enrollManySchema = z
+  .object({
+    formando_ids: z
+      .array(uuidField)
+      .min(1, 'Seleccione pelo menos um formando')
+      .max(200, 'Seleccione no máximo 200 formandos de cada vez'),
+  })
+  .strict();
+
 /** Criar novo formando e matriculá-lo no curso do path. */
 export const enrollNewSchema = z
   .object({ nome, email: emailField, contacto: contactoField, avaliacao: avaliacaoField })

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Button } from '../ui/Button';
 import { TraineeForm, type TraineeFormValues } from './TraineeForm';
 import { traineeService } from '../../services/courses';
@@ -9,6 +9,7 @@ type Mode = 'novo' | 'existente';
 export function EnrollPanel({
   saving,
   comNotas,
+  enrolledIds,
   onEnrollNew,
   onEnrollExisting,
   onCancel,
@@ -16,8 +17,11 @@ export function EnrollPanel({
   saving: boolean;
   /** false em cursos de participação: sem campo de avaliação. */
   comNotas: boolean;
+  /** Formandos já matriculados neste curso (não podem ser seleccionados). */
+  enrolledIds: string[];
   onEnrollNew: (v: TraineeFormValues) => void;
-  onEnrollExisting: (t: Trainee) => void;
+  /** Matricula de uma vez todos os formandos seleccionados. */
+  onEnrollExisting: (trainees: Trainee[]) => void;
   onCancel: () => void;
 }) {
   const [mode, setMode] = useState<Mode>('novo');
@@ -26,6 +30,12 @@ export function EnrollPanel({
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [preview, setPreview] = useState<Trainee | null>(null);
+  // Map (e não Set de ids) para a selecção sobreviver a novas pesquisas.
+  const [selected, setSelected] = useState<Map<string, Trainee>>(new Map());
+
+  const enrolled = useMemo(() => new Set(enrolledIds), [enrolledIds]);
+  const selectable = results.filter((t) => !enrolled.has(t.id));
+  const allVisibleSelected = selectable.length > 0 && selectable.every((t) => selected.has(t.id));
 
   useEffect(() => {
     if (mode !== 'existente') return;
@@ -43,6 +53,24 @@ export function EnrollPanel({
     }, 350);
     return () => clearTimeout(t);
   }, [mode, q]);
+
+  function toggle(t: Trainee) {
+    setSelected((prev) => {
+      const next = new Map(prev);
+      if (next.has(t.id)) next.delete(t.id);
+      else next.set(t.id, t);
+      return next;
+    });
+  }
+
+  function toggleAllVisible() {
+    setSelected((prev) => {
+      const next = new Map(prev);
+      if (allVisibleSelected) selectable.forEach((t) => next.delete(t.id));
+      else selectable.forEach((t) => next.set(t.id, t));
+      return next;
+    });
+  }
 
   return (
     <div className="space-y-4">
@@ -93,62 +121,100 @@ export function EnrollPanel({
               Nenhum formando encontrado. Crie um novo no separador "Novo formando".
             </p>
           ) : (
-            <ul className="max-h-64 space-y-2 overflow-y-auto">
-              {results.map((t) => (
-                <li key={t.id} className="rounded-xl border border-slate-200 p-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-brand-950">{t.nome}</p>
-                      <p className="truncate text-xs text-slate-500">
-                        {[t.email, t.contacto].filter(Boolean).join(' · ') || 'Sem contactos'}
-                      </p>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-1 text-sm font-medium">
-                      <button
-                        type="button"
-                        onClick={() => setPreview(preview?.id === t.id ? null : t)}
-                        className="rounded-lg px-2.5 py-1.5 text-slate-600 hover:bg-slate-100 hover:text-brand-900"
-                      >
-                        {preview?.id === t.id ? 'Ocultar' : 'Consultar'}
-                      </button>
-                      <button
-                        type="button"
-                        disabled={saving}
-                        onClick={() => onEnrollExisting(t)}
-                        className="rounded-lg bg-brand-900 px-3 py-1.5 text-white hover:bg-brand-950 disabled:opacity-60"
-                      >
-                        Matricular
-                      </button>
-                    </div>
-                  </div>
-                  {preview?.id === t.id && (
-                    <dl className="mt-2 grid grid-cols-2 gap-2 rounded-lg bg-slate-50 p-3 text-xs">
-                      <div>
-                        <dt className="font-semibold text-slate-500">Nome</dt>
-                        <dd className="mt-0.5 text-brand-950">{t.nome}</dd>
+            <>
+              <label className="flex cursor-pointer items-center gap-2.5 px-1 text-sm font-medium text-slate-600">
+                <input
+                  type="checkbox"
+                  checked={allVisibleSelected}
+                  disabled={selectable.length === 0}
+                  onChange={toggleAllVisible}
+                  className="h-4 w-4 accent-brand-900"
+                />
+                Seleccionar todos ({selectable.length})
+              </label>
+              <ul className="max-h-72 space-y-2 overflow-y-auto">
+                {results.map((t) => {
+                  const jaMatriculado = enrolled.has(t.id);
+                  const marcado = selected.has(t.id);
+                  return (
+                    <li
+                      key={t.id}
+                      className={`rounded-xl border p-3 ${
+                        marcado ? 'border-brand-500 bg-brand-50' : 'border-slate-200'
+                      } ${jaMatriculado ? 'opacity-60' : ''}`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <label className={`flex min-w-0 flex-1 items-center gap-2.5 ${jaMatriculado ? '' : 'cursor-pointer'}`}>
+                          <input
+                            type="checkbox"
+                            checked={marcado}
+                            disabled={jaMatriculado || saving}
+                            onChange={() => toggle(t)}
+                            className="h-4 w-4 shrink-0 accent-brand-900"
+                          />
+                          <span className="min-w-0">
+                            <span className="block truncate text-sm font-semibold text-brand-950">{t.nome}</span>
+                            <span className="block truncate text-xs text-slate-500">
+                              {jaMatriculado
+                                ? 'Já matriculado neste curso'
+                                : [t.email, t.contacto].filter(Boolean).join(' · ') || 'Sem contactos'}
+                            </span>
+                          </span>
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => setPreview(preview?.id === t.id ? null : t)}
+                          className="shrink-0 rounded-lg px-2.5 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-brand-900"
+                        >
+                          {preview?.id === t.id ? 'Ocultar' : 'Consultar'}
+                        </button>
                       </div>
-                      <div>
-                        <dt className="font-semibold text-slate-500">Email</dt>
-                        <dd className="mt-0.5 text-brand-950">{t.email ?? '-'}</dd>
-                      </div>
-                      <div>
-                        <dt className="font-semibold text-slate-500">Contacto</dt>
-                        <dd className="mt-0.5 text-brand-950">{t.contacto ?? '-'}</dd>
-                      </div>
-                      <div>
-                        <dt className="font-semibold text-slate-500">Registado em</dt>
-                        <dd className="mt-0.5 text-brand-950">{new Date(t.created_at).toLocaleDateString('pt-MZ')}</dd>
-                      </div>
-                    </dl>
-                  )}
-                </li>
-              ))}
-            </ul>
+                      {preview?.id === t.id && (
+                        <dl className="mt-2 grid grid-cols-2 gap-2 rounded-lg bg-slate-50 p-3 text-xs">
+                          <div>
+                            <dt className="font-semibold text-slate-500">Nome</dt>
+                            <dd className="mt-0.5 text-brand-950">{t.nome}</dd>
+                          </div>
+                          <div>
+                            <dt className="font-semibold text-slate-500">Email</dt>
+                            <dd className="mt-0.5 text-brand-950">{t.email ?? '-'}</dd>
+                          </div>
+                          <div>
+                            <dt className="font-semibold text-slate-500">Contacto</dt>
+                            <dd className="mt-0.5 text-brand-950">{t.contacto ?? '-'}</dd>
+                          </div>
+                          <div>
+                            <dt className="font-semibold text-slate-500">Registado em</dt>
+                            <dd className="mt-0.5 text-brand-950">{new Date(t.created_at).toLocaleDateString('pt-MZ')}</dd>
+                          </div>
+                        </dl>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </>
           )}
-          <div className="flex justify-end">
-            <Button type="button" variant="secondary" onClick={onCancel} disabled={saving}>
-              Fechar
-            </Button>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-slate-500">
+              {selected.size === 0
+                ? 'Nenhum formando seleccionado.'
+                : `${selected.size} seleccionado(s).`}
+            </p>
+            <div className="flex gap-2">
+              <Button type="button" variant="secondary" onClick={onCancel} disabled={saving} className="flex-1 sm:flex-none">
+                Fechar
+              </Button>
+              <Button
+                type="button"
+                onClick={() => onEnrollExisting([...selected.values()])}
+                disabled={selected.size === 0}
+                loading={saving}
+                className="flex-1 sm:flex-none"
+              >
+                {selected.size > 0 ? `Matricular ${selected.size}` : 'Matricular'}
+              </Button>
+            </div>
           </div>
         </div>
       )}
