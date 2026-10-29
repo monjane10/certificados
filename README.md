@@ -258,6 +258,18 @@ Preencher:
     - `reabrir_curso` volta a permitir alterações (certificados emitidos
       mantêm-se);
     - emitir certificados exige o curso encerrado.
+19. Aplicar a migração `20261029000000_pagamento_certificados.sql` (DEPOIS
+    da anterior). Taxa do certificado paga pelo formando (participação
+    100 MT, técnico-profissional 150 MT), recebida pela Microlegal:
+    - cada certificado tem um link privado (`/c/<acesso_token>`) que a
+      instituição envia pelo seu próprio WhatsApp (mensagem pronta, sem API);
+    - o formando vê uma pré-visualização com marca de água e paga por M-Pesa
+      ou e-Mola; só depois o certificado fica imprimível e válido na
+      verificação pública (antes mostra «pendente de pagamento», sem dados
+      do formando);
+    - os pagamentos só são escritos pelo backend com a chave de serviço:
+      definir `SUPABASE_SERVICE_ROLE_KEY` e `PAYMENT_PROVIDER` (`simulado`
+      em desenvolvimento: aprova sempre, excepto números terminados em 000).
 
 ### Recriar o domínio do zero
 
@@ -266,8 +278,10 @@ matrículas e certificados e recria tabelas, funções, triggers e políticas
 exactamente como nas migrações (de `20261013000000` em diante), incluindo o
 que tenha sido criado fora delas. Não toca em `profiles` (nem no primeiro
 admin), em `auth.users` nem no Storage. Corre numa única transacção: se algum
-passo falhar, nada muda. É gerado a partir de `supabase/migrations/`; se as
-migrações mudarem, gere-o de novo em vez de o editar à mão.
+passo falhar, nada muda. Apaga também os **pagamentos**: não usar com
+pagamentos reais. É gerado a partir de `supabase/migrations/`; sempre que as
+migrações mudarem, gere-o de novo com `python supabase/reset/gerar.py` em vez
+de o editar à mão.
 
 ## Execução
 
