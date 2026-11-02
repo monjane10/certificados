@@ -4,6 +4,7 @@ import {
   CertificateBody,
   Logo,
   SignatureImage,
+  VerifyQr,
   certificateText,
   fitFontSize,
   signer,
@@ -93,6 +94,7 @@ export function OndasAzuisTemplate({ cert }: TemplateProps) {
         <CertificateBody cert={cert} strongClass="font-semibold" />
       </p>
 
+      <VerifyQr cert={cert} size={72} className="absolute left-[296px] top-[652px]" />
       <div className="absolute left-1/2 top-[686px] w-[320px] -translate-x-1/2 text-center">
         <SignatureImage cert={cert} height={64} />
         <div className="h-[2px] w-full" style={{ background: NAVY }} />

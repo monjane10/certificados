@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { brandingUrl } from '../../lib/branding';
+import { QrCode } from './QrCode';
 import type { PublicCertificate } from '../../types';
 
 /** Tamanho de desenho de todos os modelos: A4 horizontal a 96 dpi (297 x 210 mm). */
@@ -32,6 +33,16 @@ export function certificateText(cert: PublicCertificate) {
     dataEmissao: longDate(cert.emitido_em),
     verifyUrl: `${window.location.host}/verificar`,
   };
+}
+
+/** Link de verificação de um certificado (o que o código QR abre). */
+export function verifyLink(codigo: string): string {
+  return `${window.location.origin}/verificar?codigo=${encodeURIComponent(codigo)}`;
+}
+
+/** Código QR que abre a verificação pública do certificado. */
+export function VerifyQr({ cert, size = 76, className = '' }: TemplateProps & { size?: number; className?: string }) {
+  return <QrCode value={verifyLink(cert.codigo)} size={size} className={className} />;
 }
 
 /** Frase principal: «Por ter participado/concluído... no curso X, com N horas...». */

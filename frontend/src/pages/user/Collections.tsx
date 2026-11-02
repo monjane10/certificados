@@ -7,15 +7,17 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { Modal } from '../../components/courses/Modal';
 import { CourseTypeBadge } from '../../components/courses/CourseTypeBadge';
 import { ErrorState, LoadingState } from '../../components/courses/States';
+import { CertificateDocument } from '../../components/certificates/CertificateDocument';
 import { certificateService } from '../../services/certificates';
-import { MessageCircle } from 'lucide-react';
+import { Eye, MessageCircle } from 'lucide-react';
 import { fmtDate } from '../../lib/certificates';
 import { studentLink, whatsappMessage, whatsappNumber, whatsappUrl } from '../../lib/whatsapp';
 import type { Certificate } from '../../types';
 
 /** O certificado só é válido depois de o formando pagar a taxa. */
 type CertSituation = 'pago' | 'por_pagar' | 'anulado';
-type StateFilter = 'todos' | CertSituation;
+/** «correcao»: o formando pediu uma correcção dos dados, ainda por resolver. */
+type StateFilter = 'todos' | CertSituation | 'correcao';
 
 function situationOf(c: Pick<Certificate, 'estado' | 'pago_em'>): CertSituation {
   if (c.estado === 'anulado') return 'anulado';
@@ -31,6 +33,14 @@ const SITUATION_STYLE: Record<CertSituation, { label: string; className: string 
 function StateBadge({ cert }: { cert: Pick<Certificate, 'estado' | 'pago_em'> }) {
   const { label, className } = SITUATION_STYLE[situationOf(cert)];
   return <span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-semibold ${className}`}>{label}</span>;
+}
+
+function CorrectionBadge() {
+  return (
+    <span className="whitespace-nowrap rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">
+      Correcção pedida
+    </span>
+  );
 }
 
 function fmtDateTime(iso: string): string {
@@ -54,9 +64,11 @@ export function UserCertificates() {
   const [search, setSearch] = useState(() => searchParams.get('q') ?? '');
   const [stateFilter, setStateFilter] = useState<StateFilter>('todos');
   const [selected, setSelected] = useState<Certificate | null>(null);
+  const [viewing, setViewing] = useState<Certificate | null>(null);
   const [annulling, setAnnulling] = useState<Certificate | null>(null);
   const [motivo, setMotivo] = useState('');
   const [saving, setSaving] = useState(false);
+  const [resolving, setResolving] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -96,7 +108,8 @@ export function UserCertificates() {
     return certs.filter(
       (c) =>
         (!courseFilter || c.curso_id === courseFilter) &&
-        (stateFilter === 'todos' || situationOf(c) === stateFilter) &&
+        (stateFilter === 'todos' ||
+          (stateFilter === 'correcao' ? Boolean(c.correcao) : situationOf(c) === stateFilter)) &&
         (!q ||
           c.codigo.toLowerCase().includes(q) ||
           c.formando_nome.toLowerCase().includes(q) ||
@@ -113,7 +126,8 @@ export function UserCertificates() {
     setSaving(true);
     try {
       const updated = await certificateService.annul(annulling.id, motivo.trim());
-      setCerts((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
+      // Anular fecha o pedido de correcção; o contacto não vem na resposta.
+      setCerts((prev) => prev.map((c) => (c.id === updated.id ? { ...c, ...updated, correcao: null } : c)));
       toast.success(`Certificado ${updated.codigo} anulado. A nota/matrícula do formando fica de novo editável.`);
       setAnnulling(null);
       setMotivo('');
@@ -121,6 +135,23 @@ export function UserCertificates() {
       toast.error(e instanceof Error ? e.message : 'Falha ao anular o certificado.');
     } finally {
       setSaving(false);
+    }
+  }
+
+  /** O formando pediu uma correcção, mas os dados estão certos: fecha o pedido (o formando pode pagar). */
+  async function handleResolveCorrection(c: Certificate) {
+    if (resolving) return;
+    setResolving(true);
+    try {
+      await certificateService.resolveCorrection(c.id);
+      const update = (x: Certificate) => (x.id === c.id ? { ...x, correcao: null } : x);
+      setCerts((prev) => prev.map(update));
+      setSelected((prev) => (prev ? update(prev) : prev));
+      toast.success('Pedido de correcção fechado. Contacte o formando a explicar que os dados estão correctos.');
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Falha ao fechar o pedido de correcção.');
+    } finally {
+      setResolving(false);
     }
   }
 
@@ -153,7 +184,7 @@ export function UserCertificates() {
       <div>
         <h1 className="text-2xl font-extrabold tracking-tight text-brand-950">Certificados</h1>
         <p className="mt-1 text-sm text-slate-500">
-          Emita certificados a partir da página de cada curso concluído. Aqui consulta, imprime e anula os certificados emitidos.
+          Emita certificados a partir da página de cada curso concluído. Aqui consulta e anula os certificados emitidos.
         </p>
       </div>
 
@@ -188,6 +219,7 @@ export function UserCertificates() {
           <option value="por_pagar">Por pagar</option>
           <option value="pago">Pagos</option>
           <option value="anulado">Anulados</option>
+          <option value="correcao">Correcção pedida</option>
         </select>
       </div>
 
@@ -257,7 +289,10 @@ export function UserCertificates() {
                       {fmtDateTime(c.emitido_em)}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <StateBadge cert={c} />
+                      <div className="flex flex-col items-end gap-1">
+                        <StateBadge cert={c} />
+                        {c.correcao && <CorrectionBadge />}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -315,7 +350,10 @@ export function UserCertificates() {
               <div>
                 <dt className="text-xs text-muted">Taxa do formando</dt>
                 <dd className="mt-0.5 font-semibold text-ink">
-                  {selected.taxa_valor} MT · {selected.pago_em ? `pago em ${fmtDateTime(selected.pago_em)}` : 'por pagar'}
+                  {selected.taxa_valor} MT ·{' '}
+                  {selected.pago_em
+                    ? `pago em ${fmtDateTime(selected.pago_em)}${selected.pago_herdado_de ? ' (no certificado anterior)' : ''}`
+                    : 'por pagar'}
                 </dd>
               </div>
               <div>
@@ -325,6 +363,29 @@ export function UserCertificates() {
                 </dd>
               </div>
             </dl>
+            {selected.correcao && (
+              <div className="rounded-lg border border-amber-300 bg-amber-50 p-3">
+                <p className="text-sm font-semibold text-amber-900">
+                  Correcção pedida pelo formando em {fmtDateTime(selected.correcao.criado_em)}
+                </p>
+                <blockquote className="mt-1.5 border-l-2 border-amber-300 pl-3 text-sm italic text-amber-900/80">
+                  {selected.correcao.mensagem}
+                </blockquote>
+                <p className="mt-2 text-xs text-amber-900">
+                  Para corrigir: anule este certificado, corrija os dados e emita-o de novo. Envie depois o link novo ao
+                  formando{selected.pago_em ? '; o pagamento passa para o certificado novo' : ''}. Enquanto o pedido estiver
+                  aberto, o formando não pode pagar.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => void handleResolveCorrection(selected)}
+                  disabled={resolving}
+                  className="mt-2 text-sm font-semibold text-amber-900 hover:underline disabled:opacity-60"
+                >
+                  Os dados estão correctos: fechar o pedido
+                </button>
+              </div>
+            )}
             {selected.estado === 'emitido' && !selected.pago_em && (
               <SendPanel
                 cert={selected}
@@ -349,17 +410,30 @@ export function UserCertificates() {
                   Anular
                 </button>
               )}
-              {/* Antes do pagamento o certificado não é público: abre-se a página do formando. */}
-              <Link
-                to={selected.pago_em ? `/certificado/${selected.codigo}` : `/c/${selected.acesso_token}`}
-                target="_blank"
-                className="inline-flex items-center justify-center rounded-button bg-ink px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-950"
+              <button
+                onClick={() => {
+                  setViewing(selected);
+                  setSelected(null);
+                }}
+                className="inline-flex items-center justify-center gap-2 rounded-button bg-ink px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-950"
               >
-                {selected.pago_em ? 'Ver certificado' : 'Ver página do formando'}
-              </Link>
+                <Eye size={16} /> Ver certificado
+              </button>
             </div>
           </div>
         )}
+      </Modal>
+
+      <Modal
+        open={viewing !== null}
+        title="Certificado"
+        size="xl"
+        onClose={() => {
+          setSelected(viewing);
+          setViewing(null);
+        }}
+      >
+        {viewing && <CertificateViewer cert={viewing} />}
       </Modal>
 
       <Modal open={annulling !== null} title="Anular certificado" onClose={() => (saving ? null : setAnnulling(null))}>
@@ -369,6 +443,7 @@ export function UserCertificates() {
               Anular o certificado <strong className="font-mono text-brand-950">{annulling.codigo}</strong> de{' '}
               <strong className="text-brand-950">{annulling.formando_nome}</strong>? A verificação pública passa a indicar
               «anulado». O registo não é apagado e pode emitir um novo certificado depois de corrigir os dados.
+              {annulling.pago_em && ' O formando já pagou: o pagamento passa para o certificado que emitir a seguir.'}
             </p>
             <div className="space-y-1.5">
               <label htmlFor="motivo" className="block text-sm font-medium text-brand-950">
@@ -436,6 +511,26 @@ function SendPanel({
           Copiar mensagem
         </button>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Visualização do certificado pela instituição, sem opção de imprimir ou guardar:
+ * só o formando o obtém, depois de pagar.
+ */
+function CertificateViewer({ cert }: { cert: Certificate }) {
+  return (
+    <div className="space-y-3">
+      <style>{'@media print { .cert-frame { display: none !important; } }'}</style>
+      <div onContextMenu={(e) => e.preventDefault()} onDragStart={(e) => e.preventDefault()}>
+        <CertificateDocument cert={cert} className="rounded-lg border border-line" />
+      </div>
+      <p className="text-xs text-muted">
+        {cert.pago_em
+          ? 'Só para consulta. O formando imprime ou guarda o certificado a partir do link que recebeu.'
+          : 'Só para consulta. O certificado fica disponível ao formando depois de pagar a taxa.'}
+      </p>
     </div>
   );
 }

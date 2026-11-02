@@ -14,8 +14,9 @@ AQUI = os.path.dirname(os.path.abspath(__file__))
 MIGRACOES = os.path.join(AQUI, '..', 'migrations')
 PRIMEIRA = '20261013000000'
 
-# Ordem: dependentes primeiro (pagamentos -> certificados -> matriculas -> ...).
+# Ordem: dependentes primeiro (pedidos_correcao/pagamentos -> certificados -> matriculas -> ...).
 TABELAS = [
+    'pedidos_correcao',
     'pagamentos',
     'certificados',
     'certificados_legado',
@@ -35,16 +36,18 @@ FUNCOES = [
     'estado_curso_datas', 'estado_curso', 'proteger_curso_encerrado',
     'proteger_matriculas_curso_encerrado', 'encerrar_curso', 'reabrir_curso',
     'taxa_certificado', 'preparar_certificado', 'pagamentos_touch',
-    'certificado_por_token', 'marcar_whatsapp_enviado',
+    'certificado_por_token', 'marcar_whatsapp_enviado', 'pagamento_do_certificado',
+    'pedir_correcao', 'resolver_correcao', 'resolver_correcao_ao_anular',
 ]
 # Criadas directamente na BD, fora das migrações.
 FUNCOES_FORA = ['definir_estado_curso', 'actualizar_estados_cursos', 'calcular_estado_curso']
 
 CABECALHO = """-- RECRIAR O DOMÍNIO DO ZERO - Microlegal Certificados
 -- ============================================================================
--- APAGA TODOS os cursos, formandos, matrículas, certificados e PAGAMENTOS e
--- recria as tabelas, funções, triggers e políticas exactamente como estão nas
--- migrações do repositório (de {primeira} até à última).
+-- APAGA TODOS os cursos, formandos, matrículas, certificados, pedidos de
+-- correcção e PAGAMENTOS e recria as tabelas, funções, triggers e políticas
+-- exactamente como estão nas migrações do repositório (de {primeira} até à
+-- última).
 --
 -- ATENÇÃO: os pagamentos são registos de dinheiro recebido. Não use este
 -- script numa base de dados com pagamentos reais.

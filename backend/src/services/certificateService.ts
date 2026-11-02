@@ -1,12 +1,12 @@
 import { scopedClient, supabaseAnon } from '../config/supabase.js';
-import type { Certificate, EmissionSummary, PublicVerification } from '../types/index.js';
+import type { Certificate, CorrectionRequest, EmissionSummary, PublicVerification } from '../types/index.js';
 import { dbError, requireOwnedCourse } from './courseService.js';
 
 const CERT_COLUMNS =
   'id, codigo, matricula_id, curso_id, formando_id, tipo, modelo, formando_nome, curso_nome, carga_horaria, ' +
   'data_abertura, data_encerramento, nota, emissor_nome, logo_path, assinatura_path, responsavel_nome, ' +
   'responsavel_cargo, estado, emitido_em, anulado_em, motivo_anulacao, acesso_token, taxa_valor, pago_em, ' +
-  'whatsapp_enviado_em';
+  'pago_herdado_de, whatsapp_enviado_em';
 
 export const CERT_CODE_RE = /^CERT-[A-HJ-NP-Z2-9]{8}$/;
 
@@ -29,13 +29,33 @@ export async function listCertificates(
   // se o contacto for corrigido, o envio usa o novo).
   const ids = [...new Set(certs.map((c) => c.formando_id))];
   if (ids.length === 0) return certs;
-  const { data: formandos, error: fError } = await scopedClient(accessToken)
-    .from('formandos')
-    .select('id, contacto')
-    .in('id', ids);
+  const activos = certs.filter((c) => c.estado === 'emitido').map((c) => c.id);
+  const [{ data: formandos, error: fError }, { data: pedidos, error: pError }] = await Promise.all([
+    scopedClient(accessToken).from('formandos').select('id, contacto').in('id', ids),
+    // Pedidos de correcção em aberto (RLS: só os dos certificados do utilizador).
+    scopedClient(accessToken)
+      .from('pedidos_correcao')
+      .select('certificado_id, mensagem, criado_em')
+      .eq('estado', 'aberto')
+      .in('certificado_id', activos),
+  ]);
   if (fError) throw dbError(fError, 500, 'Falha ao listar certificados.');
+  if (pError) throw dbError(pError, 500, 'Falha ao listar certificados.');
   const contactos = new Map((formandos ?? []).map((f) => [f.id as string, (f.contacto as string | null) ?? null]));
-  return certs.map((c) => ({ ...c, formando_contacto: contactos.get(c.formando_id) ?? null }));
+  const correcoes = new Map<string, CorrectionRequest>(
+    (pedidos ?? []).map((p) => [p.certificado_id as string, { mensagem: p.mensagem as string, criado_em: p.criado_em as string }]),
+  );
+  return certs.map((c) => ({
+    ...c,
+    formando_contacto: contactos.get(c.formando_id) ?? null,
+    correcao: correcoes.get(c.id) ?? null,
+  }));
+}
+
+/** A instituição confirma que os dados estão correctos: fecha o pedido de correcção. */
+export async function resolveCorrection(accessToken: string, certificateId: string): Promise<void> {
+  const { error } = await scopedClient(accessToken).rpc('resolver_correcao', { p_certificado_id: certificateId });
+  if (error) throw dbError(error, 409, 'Não foi possível fechar o pedido de correcção.');
 }
 
 /** Regista que o link foi enviado ao formando pelo WhatsApp da instituição. */

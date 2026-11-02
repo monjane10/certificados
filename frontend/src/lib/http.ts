@@ -9,6 +9,15 @@ async function authHeader(): Promise<Record<string, string>> {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+/** Erro devolvido pelo servidor (status 0: sem ligação ao servidor). */
+export class ApiError extends Error {
+  status: number;
+  constructor(status: number, message: string) {
+    super(message);
+    this.status = status;
+  }
+}
+
 type Json = { error?: string; details?: Record<string, string[] | undefined> } & Record<string, unknown>;
 
 async function handle(res: Response): Promise<Json> {
@@ -16,7 +25,7 @@ async function handle(res: Response): Promise<Json> {
   if (!res.ok) {
     // Erros de validação: mostra a mensagem do primeiro campo em vez de só "Dados inválidos."
     const detail = Object.values(json.details ?? {}).find((m) => m && m.length > 0)?.[0];
-    throw new Error(detail ?? json.error ?? `Erro ${res.status}`);
+    throw new ApiError(res.status, detail ?? json.error ?? `Erro ${res.status}`);
   }
   return json;
 }
@@ -26,10 +35,15 @@ export async function apiRequest(path: string, init: { method?: string; body?: u
   const { method = 'GET', body, auth = true } = init;
   const headers: Record<string, string> = auth ? await authHeader() : {};
   if (body !== undefined) headers['Content-Type'] = 'application/json';
-  const res = await fetch(`${API_URL}${path}`, {
-    method,
-    headers,
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}${path}`, {
+      method,
+      headers,
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    });
+  } catch {
+    throw new ApiError(0, 'Sem ligação ao servidor. Verifique a internet e tente de novo.');
+  }
   return handle(res);
 }

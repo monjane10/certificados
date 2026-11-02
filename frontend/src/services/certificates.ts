@@ -1,5 +1,12 @@
 import { apiRequest } from '../lib/http';
-import type { Certificate, EmissionSummary, PaymentMethod, PublicVerification, StudentCertificate } from '../types';
+import type {
+  Certificate,
+  CorrectionRequest,
+  EmissionSummary,
+  PaymentMethod,
+  PublicVerification,
+  StudentCertificate,
+} from '../types';
 
 export const certificateService = {
   async list(courseId?: string): Promise<Certificate[]> {
@@ -20,19 +27,34 @@ export const certificateService = {
     const json = await apiRequest(`/api/certificates/${id}/whatsapp`, { method: 'POST' });
     return json['whatsapp_enviado_em'] as string;
   },
+  /** A instituição confirma que os dados estão correctos e fecha o pedido de correcção. */
+  async resolveCorrection(id: string): Promise<void> {
+    await apiRequest(`/api/certificates/${id}/correcao/resolver`, { method: 'POST' });
+  },
   /** Página do formando (link privado, sem sessão). */
   async student(token: string): Promise<StudentCertificate> {
     const json = await apiRequest(`/api/public/c/${encodeURIComponent(token)}`, { auth: false });
     return json['certificate'] as StudentCertificate;
   },
-  /** Cobra a taxa: o pedido chega ao telemóvel e o formando confirma com o PIN. */
-  async pay(token: string, metodo: PaymentMethod, telefone: string): Promise<{ estado: 'pago' | 'falhado'; mensagem: string }> {
-    const json = await apiRequest(`/api/public/c/${encodeURIComponent(token)}/pagamento`, {
+  /**
+   * Inicia a cobrança da taxa: o pedido chega ao telemóvel e o formando
+   * confirma com o PIN. A resposta chega depois (ver `pagamento` em `student`).
+   */
+  async pay(token: string, metodo: PaymentMethod, telefone: string): Promise<void> {
+    await apiRequest(`/api/public/c/${encodeURIComponent(token)}/pagamento`, {
       method: 'POST',
       body: { metodo, telefone },
       auth: false,
     });
-    return { estado: json['estado'] as 'pago' | 'falhado', mensagem: json['mensagem'] as string };
+  },
+  /** O formando avisa a instituição de um erro nos dados do certificado. */
+  async requestCorrection(token: string, mensagem: string): Promise<CorrectionRequest> {
+    const json = await apiRequest(`/api/public/c/${encodeURIComponent(token)}/correcao`, {
+      method: 'POST',
+      body: { mensagem },
+      auth: false,
+    });
+    return json['correcao'] as CorrectionRequest;
   },
   /** Verificação pública (sem sessão). */
   async verify(codigo: string): Promise<PublicVerification> {

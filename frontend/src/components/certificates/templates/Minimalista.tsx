@@ -2,6 +2,7 @@ import {
   CertificateBody,
   Logo,
   SignatureImage,
+  VerifyQr,
   certificateText,
   fitFontSize,
   initials,
@@ -44,6 +45,7 @@ export function MinimalistaTemplate({ cert }: TemplateProps) {
           <div>
             <p className="uppercase tracking-[0.2em] text-white/60">Verificar em</p>
             <p className="mt-1 break-all font-medium">{t.verifyUrl}</p>
+            <VerifyQr cert={cert} size={84} className="mt-3 rounded" />
           </div>
         </div>
       </aside>

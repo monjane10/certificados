@@ -114,9 +114,19 @@ export interface Certificate {
   /** Taxa do certificado em MT (participação 100, técnico-profissional 150). */
   taxa_valor: number;
   pago_em: string | null;
+  /** Certificado anulado de onde veio o pagamento (reemissão depois de uma correcção). */
+  pago_herdado_de: string | null;
   whatsapp_enviado_em: string | null;
   /** Contacto actual do formando (não faz parte do snapshot). */
   formando_contacto?: string | null;
+  /** Pedido de correcção do formando ainda por resolver. */
+  correcao?: CorrectionRequest | null;
+}
+
+/** Pedido de correcção dos dados, feito pelo formando a partir do seu link. */
+export interface CorrectionRequest {
+  mensagem: string;
+  criado_em: string;
 }
 
 /** Dados públicos devolvidos pela verificação (sem ids internos). */
@@ -151,8 +161,30 @@ export type PublicVerification =
       pago: false;
     });
 
-/** Página do formando (link privado): dados completos, estado do pagamento e taxa. */
-export type StudentCertificate = PublicCertificate & { pago: boolean; taxa_valor: number };
+/** Pagamento mostrado ao formando: o confirmado (comprovativo) ou o último pedido. */
+export interface StudentPayment {
+  estado: 'pendente' | 'pago' | 'falhado';
+  erro: string | null;
+  referencia: string;
+  metodo: PaymentMethod;
+  valor: number;
+  /** Mascarado: 84 *** 4567. */
+  telefone: string;
+  criado_em: string;
+  actualizado_em: string;
+}
+
+/** Página do formando (link privado): dados completos, contacto da instituição, pagamento e taxa. */
+export type StudentCertificate = PublicCertificate & {
+  emissor_telefone: string | null;
+  emissor_email: string | null;
+  pago: boolean;
+  pago_em: string | null;
+  pagamento_herdado: boolean;
+  taxa_valor: number;
+  pagamento: StudentPayment | null;
+  correcao: CorrectionRequest | null;
+};
 
 export type PaymentMethod = 'mpesa' | 'emola';
 

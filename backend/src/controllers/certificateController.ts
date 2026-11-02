@@ -5,6 +5,7 @@ import {
   emitCertificates,
   listCertificates,
   markWhatsappSent,
+  resolveCorrection,
   verifyCertificate,
 } from '../services/certificateService.js';
 import {
@@ -12,6 +13,7 @@ import {
   getStudentCertificate,
   normalizePhone,
   payCertificate,
+  requestCorrection,
   validatePhone,
 } from '../services/paymentService.js';
 import { HttpError } from '../services/courseService.js';
@@ -86,6 +88,20 @@ export async function postWhatsappSent(req: Request, res: Response) {
   }
 }
 
+export async function postResolveCorrection(req: Request, res: Response) {
+  if (!UUID_RE.test(req.params['id'] ?? '')) {
+    res.status(400).json({ error: 'Identificador inválido.' });
+    return;
+  }
+  try {
+    const { token } = ctx(req);
+    await resolveCorrection(token, req.params['id'] as string);
+    res.status(204).end();
+  } catch (e) {
+    fail(res, e, 'Não foi possível fechar o pedido de correcção.');
+  }
+}
+
 // --- Formando (link privado, sem sessão) -----------------------------------------------
 
 export async function getStudentCertificateByToken(req: Request, res: Response) {
@@ -124,10 +140,23 @@ export async function postStudentPayment(req: Request, res: Response) {
     return;
   }
   try {
-    // Pagamento recusado (saldo, PIN cancelado...) é um resultado, não um erro do pedido.
-    res.json(await payCertificate(token, parsed.data.metodo, telefone));
+    // 202: o pedido foi enviado ao telemóvel; a confirmação chega depois.
+    res.status(202).json(await payCertificate(token, parsed.data.metodo, telefone));
   } catch (e) {
-    fail(res, e, 'Não foi possível concluir o pagamento.');
+    fail(res, e, 'Não foi possível iniciar o pagamento.');
+  }
+}
+
+export async function postStudentCorrection(req: Request, res: Response) {
+  const token = String(req.params['token'] ?? '');
+  if (!ACCESS_TOKEN_RE.test(token)) {
+    res.status(404).json({ error: 'Link inválido. Confirme o link que recebeu.' });
+    return;
+  }
+  try {
+    res.status(201).json({ correcao: await requestCorrection(token, req.body.mensagem) });
+  } catch (e) {
+    fail(res, e, 'Não foi possível enviar o pedido.');
   }
 }
 

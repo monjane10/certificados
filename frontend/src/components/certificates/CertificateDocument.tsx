@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState, type Ref } from 'react';
 import type { PublicCertificate } from '../../types';
 import { templateById } from './registry';
 import { CANVAS_H, CANVAS_W } from './shared';
@@ -12,11 +12,14 @@ export function CertificateDocument({
   cert,
   className = '',
   watermark,
+  canvasRef,
 }: {
   cert: PublicCertificate;
   className?: string;
   /** Pré-visualização antes do pagamento: texto repetido na diagonal por cima do certificado. */
   watermark?: string;
+  /** Desenho a 1123x794 (antes da escala): é o que se exporta para PDF e imagem. */
+  canvasRef?: Ref<HTMLDivElement>;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
@@ -40,6 +43,7 @@ export function CertificateDocument({
       style={{ aspectRatio: `${CANVAS_W} / ${CANVAS_H}` }}
     >
       <div
+        ref={canvasRef}
         className="cert-scaler absolute left-0 top-0 origin-top-left"
         style={{ width: CANVAS_W, height: CANVAS_H, transform: `scale(${scale})` }}
       >

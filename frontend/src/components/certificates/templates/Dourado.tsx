@@ -5,6 +5,7 @@ import {
   CertificateBody,
   Logo,
   SignatureImage,
+  VerifyQr,
   certificateText,
   fitFontSize,
   signer,
@@ -97,6 +98,7 @@ export function DouradoTemplate({ cert }: TemplateProps) {
         <p className="leading-tight">{t.dataEmissao}</p>
         <p className="mt-1 text-[12px] uppercase tracking-[0.2em]" style={{ color: GOLD_DARK }}>Data de emissão</p>
       </div>
+      <VerifyQr cert={cert} size={64} className="absolute left-[424px] top-[640px]" />
       <div className="absolute right-[150px] top-[652px] w-[260px] text-center text-[15px]">
         <SignatureImage cert={cert} height={64} />
         <div className="h-px w-full bg-[#B8892D]" />

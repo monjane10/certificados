@@ -1,4 +1,13 @@
-import { CertificateBody, Logo, SignatureImage, certificateText, fitFontSize, signer, type TemplateProps } from '../shared';
+import {
+  CertificateBody,
+  Logo,
+  SignatureImage,
+  VerifyQr,
+  certificateText,
+  fitFontSize,
+  signer,
+  type TemplateProps,
+} from '../shared';
 
 /** Clássico: moldura dupla azul-marinho, tipografia serifada. */
 export function ClassicoTemplate({ cert }: TemplateProps) {
@@ -27,11 +36,14 @@ export function ClassicoTemplate({ cert }: TemplateProps) {
       </div>
 
       <div className="absolute inset-x-[110px] bottom-[80px] flex items-end justify-between text-[14px] text-slate-600" style={{ fontFamily: 'Inter, sans-serif' }}>
-        <div>
-          <p>Emitido a {t.dataEmissao}</p>
-          <p className="mt-1">
-            Código <span className="font-mono font-semibold text-[#11245C]">{cert.codigo}</span> · {t.verifyUrl}
-          </p>
+        <div className="flex items-end gap-4">
+          <VerifyQr cert={cert} size={78} />
+          <div>
+            <p>Emitido a {t.dataEmissao}</p>
+            <p className="mt-1">
+              Código <span className="font-mono font-semibold text-[#11245C]">{cert.codigo}</span> · {t.verifyUrl}
+            </p>
+          </div>
         </div>
         <div className="relative w-[300px] text-center">
           <SignatureImage cert={cert} />

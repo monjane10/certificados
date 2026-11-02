@@ -18,4 +18,15 @@ export const studentPaymentSchema = z
   })
   .strict();
 
+/** Pedido de correcção do formando (o que está errado nos dados). */
+export const correctionRequestSchema = z
+  .object({
+    mensagem: z
+      .string({ required_error: 'Descreva o erro.' })
+      .trim()
+      .min(5, 'Descreva o erro (mín. 5 caracteres).')
+      .max(1000, 'Mensagem demasiado longa.'),
+  })
+  .strict();
+
 export type AnnulCertificateInput = z.infer<typeof annulCertificateSchema>;

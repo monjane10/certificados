@@ -1,15 +1,23 @@
 import { Router } from 'express';
 import { authenticate } from '../middlewares/auth.js';
 import { requireRole } from '../middlewares/requireRole.js';
-import { paymentLimiter, publicVerifyLimiter, sensitiveLimiter } from '../middlewares/rateLimit.js';
+import {
+  correctionLimiter,
+  paymentLimiter,
+  publicVerifyLimiter,
+  sensitiveLimiter,
+  studentPageLimiter,
+} from '../middlewares/rateLimit.js';
 import { validateBody } from '../middlewares/validate.js';
-import { annulCertificateSchema } from '../schemas/certificate.js';
+import { annulCertificateSchema, correctionRequestSchema } from '../schemas/certificate.js';
 import {
   getCertificates,
   getPublicCertificate,
   getStudentCertificateByToken,
   postAnnulCertificate,
   postCourseCertificates,
+  postResolveCorrection,
+  postStudentCorrection,
   postStudentPayment,
   postWhatsappSent,
 } from '../controllers/certificateController.js';
@@ -78,10 +86,13 @@ router.get('/certificates', authenticate, getCertificates);
 router.post('/courses/:id/certificates', sensitiveLimiter, authenticate, postCourseCertificates);
 router.post('/certificates/:id/annul', sensitiveLimiter, authenticate, validateBody(annulCertificateSchema), postAnnulCertificate);
 router.post('/certificates/:id/whatsapp', sensitiveLimiter, authenticate, postWhatsappSent);
+router.post('/certificates/:id/correcao/resolver', sensitiveLimiter, authenticate, postResolveCorrection);
 router.get('/public/certificates/:codigo', publicVerifyLimiter, getPublicCertificate);
 
 // Formando: link privado enviado pela instituição; paga a taxa para desbloquear.
-router.get('/public/c/:token', publicVerifyLimiter, getStudentCertificateByToken);
+// O pagamento responde logo (pendente); a página consulta o estado até à confirmação.
+router.get('/public/c/:token', studentPageLimiter, getStudentCertificateByToken);
 router.post('/public/c/:token/pagamento', paymentLimiter, postStudentPayment);
+router.post('/public/c/:token/correcao', correctionLimiter, validateBody(correctionRequestSchema), postStudentCorrection);
 
 export default router;

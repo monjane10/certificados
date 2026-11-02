@@ -5,6 +5,7 @@ import {
   CertificateBody,
   Logo,
   SignatureImage,
+  VerifyQr,
   certificateText,
   fitFontSize,
   initials,
@@ -96,6 +97,7 @@ export function VioletaTemplate({ cert }: TemplateProps) {
         <p className="text-[15px] font-medium leading-tight">{t.dataEmissao}</p>
         <p className="mt-1 text-[12px] uppercase tracking-widest text-slate-500">Data de emissão</p>
       </div>
+      <VerifyQr cert={cert} size={72} className="absolute left-[521px] top-[660px]" />
       <div className="absolute right-[200px] top-[668px] w-[280px] text-center">
         <SignatureImage cert={cert} height={64} />
         <div className="h-px w-full bg-slate-400" />
