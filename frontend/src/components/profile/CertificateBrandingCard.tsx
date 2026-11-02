@@ -8,17 +8,9 @@ import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { Input } from '../ui/Input';
 
-const SLOTS: Record<BrandingKind, { titulo: string; ajuda: string; campo: 'logo_path' | 'assinatura_path' }> = {
-  logo: {
-    titulo: 'Logótipo',
-    ajuda: 'PNG com fundo transparente fica melhor. Aparece no topo dos certificados.',
-    campo: 'logo_path',
-  },
-  assinatura: {
-    titulo: 'Assinatura',
-    ajuda: 'Assine em papel branco, fotografe ou digitalize. O fundo branco é removido automaticamente.',
-    campo: 'assinatura_path',
-  },
+const SLOTS: Record<BrandingKind, { titulo: string; campo: 'logo_path' | 'assinatura_path' }> = {
+  logo: { titulo: 'Logótipo', campo: 'logo_path' },
+  assinatura: { titulo: 'Assinatura', campo: 'assinatura_path' },
 };
 
 // Xadrez para mostrar a transparência das imagens.
@@ -85,7 +77,6 @@ function ImageSlot({ kind }: { kind: BrandingKind }) {
           </p>
         )}
       </div>
-      <p className="text-xs text-slate-500">{slot.ajuda}</p>
       <input
         ref={inputRef}
         type="file"
