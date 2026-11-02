@@ -1,30 +1,14 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import {
-  CircleAlert,
-  CircleCheck,
-  Download,
-  Expand,
-  ImageDown,
-  Mail,
-  MessageCircle,
-  Phone,
-  Printer,
-  Share2,
-  ShieldCheck,
-  WifiOff,
-} from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { Mail, MessageCircle, Phone, WifiOff } from 'lucide-react';
 import { certificateService } from '../../services/certificates';
 import { ApiError } from '../../lib/http';
-import { brandingUrl } from '../../lib/branding';
 import { whatsappNumber, whatsappUrl } from '../../lib/whatsapp';
-import { CertificateDocument } from '../../components/certificates/CertificateDocument';
 import { CertificateFullscreen } from '../../components/certificates/CertificateFullscreen';
-import { downloadImage, downloadPdf } from '../../components/certificates/export';
 import { PRINT_CSS } from '../../components/certificates/print';
-import { verifyLink } from '../../components/certificates/shared';
 import { Modal } from '../../components/courses/Modal';
-import { Checkout, MethodLogo, NOME_METODO } from '../../components/student/Checkout';
+import { Checkout } from '../../components/student/Checkout';
+import { PaidView } from '../../components/student/PaidView';
 import { Button } from '../../components/ui/Button';
 import { Spinner } from '../../components/ui/Spinner';
 import type { StudentCertificate } from '../../types';
@@ -32,17 +16,10 @@ import type { StudentCertificate } from '../../types';
 /** Enquanto o pagamento está pendente, a página consulta o estado a este ritmo. */
 const POLL_MS = 3000;
 
-function fmtDateTime(iso: string): string {
-  return new Date(iso).toLocaleString('pt-MZ', { dateStyle: 'medium', timeStyle: 'short' });
-}
-
-const secondaryAction =
-  'inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-button border border-line bg-white px-3 py-2.5 text-sm font-semibold text-ink hover:bg-soft disabled:opacity-60 sm:px-4';
-
 /**
  * Página do formando (link privado enviado pela instituição). Antes do
  * pagamento: só a confirmação dos dados e o pagamento (Checkout); depois:
- * comprovativo e certificado para descarregar.
+ * o certificado, para descarregar, e o comprovativo (PaidView).
  */
 export function StudentCertificatePage() {
   const { token = '' } = useParams<{ token: string }>();
@@ -119,32 +96,12 @@ export function StudentCertificatePage() {
   const reportError = cert.correcao ? undefined : () => setCorrecting(true);
 
   return (
-    <div className="min-h-screen bg-slate-100 py-6 sm:py-10 print:bg-white print:py-0">
+    <>
       <style>{PRINT_CSS}</style>
-
-      {/* Depois do pagamento: o certificado em grande, para descarregar. */}
-      <div className="mx-auto max-w-[1123px] space-y-4 px-4 print:max-w-none print:px-0">
-          <IssuerHeader cert={cert} />
-          {cert.correcao && <CorrectionPending cert={cert} />}
-          <PaidPanel cert={cert} />
-          <div className="space-y-2">
-            <div className="flex justify-end print:hidden">
-              <button
-                type="button"
-                onClick={() => setFullscreen(true)}
-                className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-900 hover:underline"
-              >
-                <Expand size={15} /> Ver em ecrã inteiro
-              </button>
-            </div>
-            <ExportableCertificate cert={cert} />
-          </div>
-          <InfoPanel cert={cert} onReportError={reportError} />
-        </div>
-
+      <PaidView cert={cert} onFullscreen={() => setFullscreen(true)} onReportError={reportError} />
       {fullscreen && <CertificateFullscreen cert={cert} onClose={closeFullscreen} />}
       {correctionModal}
-    </div>
+    </>
   );
 }
 
@@ -173,22 +130,6 @@ function LoadErrorPage({ error, onRetry }: { error: ApiError; onRetry: () => voi
   );
 }
 
-function IssuerHeader({ cert }: { cert: StudentCertificate }) {
-  const logo = brandingUrl(cert.logo_path);
-  return (
-    <header className="flex flex-wrap items-center gap-4 print:hidden">
-      {logo && <img src={logo} alt="" className="h-14 w-14 shrink-0 rounded-lg bg-white object-contain p-1 shadow-card" />}
-      <div className="min-w-0 flex-1">
-        <p className="text-sm text-slate-500">{cert.emissor_nome}</p>
-        <h1 className="text-xl font-extrabold tracking-tight text-brand-950 sm:text-2xl">Certificado de {cert.formando_nome}</h1>
-        <p className="text-sm text-slate-500">
-          Curso «{cert.curso_nome}» · {cert.codigo}
-        </p>
-      </div>
-    </header>
-  );
-}
-
 /** Contactos da instituição: telefone, WhatsApp e email (os que existirem). */
 function IssuerContact({ cert, className = '' }: { cert: StudentCertificate; className?: string }) {
   const wa = whatsappNumber(cert.emissor_telefone);
@@ -212,175 +153,6 @@ function IssuerContact({ cert, className = '' }: { cert: StudentCertificate; cla
         </a>
       )}
     </p>
-  );
-}
-
-function CorrectionPending({ cert }: { cert: StudentCertificate }) {
-  return (
-    <div className="rounded-card border border-amber-300 bg-amber-50 p-4 print:hidden">
-      <p className="flex items-center gap-2 text-sm font-semibold text-amber-900">
-        <CircleAlert size={18} /> Pedido de correcção enviado em {fmtDateTime(cert.correcao!.criado_em)}
-      </p>
-      <blockquote className="mt-2 border-l-2 border-amber-300 pl-3 text-sm italic text-amber-900/80">
-        {cert.correcao!.mensagem}
-      </blockquote>
-      <p className="mt-2 text-sm text-amber-900">
-        {cert.pago
-          ? 'A instituição vai corrigir os dados e enviar-lhe um link novo. O pagamento que fez passa para o certificado corrigido.'
-          : 'A instituição vai corrigir os dados e enviar-lhe um link novo. Não precisa de pagar até lá.'}
-      </p>
-    </div>
-  );
-}
-
-function PaidPanel({ cert }: { cert: StudentCertificate }) {
-  const p = cert.pagamento;
-  return (
-    <div className="space-y-3 print:hidden">
-      <div className="rounded-card border border-accent-500/40 bg-accent-50 px-4 py-3">
-        <p className="flex items-center gap-2 text-sm font-semibold text-accent-700">
-          <CircleCheck size={18} /> Pagamento confirmado. O seu certificado é válido.
-        </p>
-      </div>
-      <div className="rounded-card border border-line bg-white p-4">
-        <h2 className="text-sm font-bold text-brand-950">Comprovativo de pagamento</h2>
-        <dl className="mt-2 grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-5">
-          {p && (
-            <>
-              <div>
-                <dt className="text-xs text-slate-500">Referência</dt>
-                <dd className="font-mono font-semibold text-brand-950">{p.referencia}</dd>
-              </div>
-              <div>
-                <dt className="text-xs text-slate-500">Valor</dt>
-                <dd className="font-semibold tabular-nums text-brand-950">{p.valor} MT</dd>
-              </div>
-              <div>
-                <dt className="text-xs text-slate-500">Método</dt>
-                <dd className="flex items-center gap-1.5 font-semibold text-brand-950">
-                  <MethodLogo metodo={p.metodo} className="h-5" /> {NOME_METODO[p.metodo]}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-xs text-slate-500">Número</dt>
-                <dd className="font-semibold tabular-nums text-brand-950">{p.telefone}</dd>
-              </div>
-            </>
-          )}
-          <div>
-            <dt className="text-xs text-slate-500">Data</dt>
-            <dd className="font-semibold text-brand-950">{fmtDateTime(p?.actualizado_em ?? cert.pago_em!)}</dd>
-          </div>
-        </dl>
-        {cert.pagamento_herdado && (
-          <p className="mt-2 text-xs text-slate-500">
-            Pagamento feito no certificado anterior, que a instituição anulou para corrigir os dados.
-          </p>
-        )}
-      </div>
-    </div>
-  );
-}
-
-/** Certificado pago: com descarregar em PDF e imagem, partilhar e imprimir. */
-function ExportableCertificate({ cert }: { cert: StudentCertificate }) {
-  const canvas = useRef<HTMLDivElement>(null);
-  const [busy, setBusy] = useState<'pdf' | 'png' | null>(null);
-  const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
-
-  async function exportAs(kind: 'pdf' | 'png') {
-    if (!canvas.current || busy) return;
-    setBusy(kind);
-    setMessage(null);
-    try {
-      await (kind === 'pdf' ? downloadPdf : downloadImage)(canvas.current, cert);
-    } catch {
-      setMessage({ ok: false, text: 'Não foi possível gerar o ficheiro. Tente de novo ou use «Imprimir».' });
-    } finally {
-      setBusy(null);
-    }
-  }
-
-  async function share() {
-    const url = verifyLink(cert.codigo);
-    const text = `Certificado do curso «${cert.curso_nome}», emitido por ${cert.emissor_nome}.`;
-    setMessage(null);
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: `Certificado ${cert.codigo}`, text, url });
-      } catch {
-        // Partilha cancelada pelo formando.
-      }
-      return;
-    }
-    try {
-      await navigator.clipboard.writeText(url);
-      setMessage({ ok: true, text: 'Link de verificação copiado.' });
-    } catch {
-      setMessage({ ok: true, text: `Link de verificação: ${url}` });
-    }
-  }
-
-  return (
-    <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap print:hidden">
-        <Button
-          onClick={() => void exportAs('pdf')}
-          loading={busy === 'pdf'}
-          disabled={busy !== null}
-          className="col-span-2 py-3 sm:py-2.5"
-        >
-          {busy !== 'pdf' && <Download size={16} />} Descarregar PDF
-        </Button>
-        <button type="button" onClick={() => void exportAs('png')} disabled={busy !== null} className={secondaryAction}>
-          <ImageDown size={16} /> {busy === 'png' ? 'A gerar...' : 'Guardar imagem'}
-        </button>
-        <button type="button" onClick={() => void share()} className={secondaryAction}>
-          <Share2 size={16} /> Partilhar
-        </button>
-        <button type="button" onClick={() => window.print()} className={secondaryAction}>
-          <Printer size={16} /> Imprimir
-        </button>
-        <Link to={`/verificar?codigo=${cert.codigo}`} className={secondaryAction}>
-          <ShieldCheck size={16} /> Verificar
-        </Link>
-      </div>
-      {message && (
-        <p className={`text-sm print:hidden ${message.ok ? 'text-slate-600' : 'text-red-700'}`} role="status">
-          {message.text}
-        </p>
-      )}
-      <CertificateDocument cert={cert} canvasRef={canvas} className="shadow-lg print:shadow-none" />
-    </div>
-  );
-}
-
-/** Para que serve a taxa, aviso contra burlas e contacto da instituição. */
-function InfoPanel({ cert, onReportError }: { cert: StudentCertificate; onReportError?: () => void }) {
-  return (
-    <div className="grid gap-4 rounded-card border border-line bg-white p-4 text-sm sm:grid-cols-2 print:hidden">
-      <div className="space-y-2">
-        <p className="font-semibold text-brand-950">{cert.pago ? 'O seu certificado' : 'O que recebe com a taxa'}</p>
-        <ul className="list-disc space-y-1 pl-5 text-slate-600">
-          <li>Certificado em PDF (A4) e em imagem, para imprimir ou partilhar.</li>
-          <li>Código QR e código {cert.codigo}, válidos na verificação pública: quem receber o certificado confirma que é autêntico.</li>
-          <li>Acesso permanente a esta página, pelo mesmo link.</li>
-        </ul>
-        <p className="flex items-start gap-1.5 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900">
-          <ShieldCheck size={14} className="mt-0.5 shrink-0" />
-          Pague apenas nesta página. Ninguém da instituição lhe vai pedir o PIN nem pagamentos para outro número.
-        </p>
-      </div>
-      <div className="space-y-2">
-        <p className="font-semibold text-brand-950">Dúvidas? Fale com {cert.emissor_nome}</p>
-        <IssuerContact cert={cert} />
-        {onReportError && (
-          <button type="button" onClick={onReportError} className="font-semibold text-red-700 hover:underline">
-            Encontrou um erro nos dados? Avise a instituição
-          </button>
-        )}
-      </div>
-    </div>
   );
 }
 
