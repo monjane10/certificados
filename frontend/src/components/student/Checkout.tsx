@@ -1,15 +1,39 @@
 import { useState } from 'react';
-import { ArrowRight, CircleAlert } from 'lucide-react';
+import { CircleAlert } from 'lucide-react';
 import { certificateService } from '../../services/certificates';
 import { brandingUrl } from '../../lib/branding';
 import { fmtDate } from '../../lib/certificates';
 import { Button } from '../ui/Button';
 import type { PaymentMethod, StudentCertificate } from '../../types';
 
-const METODOS: Array<{ id: PaymentMethod; nome: string; rede: string; prefixos: string }> = [
-  { id: 'mpesa', nome: 'M-Pesa', rede: 'Vodacom', prefixos: '84 ou 85' },
-  { id: 'emola', nome: 'e-Mola', rede: 'Movitel', prefixos: '86 ou 87' },
+const METODOS: Array<{ id: PaymentMethod; nome: string; rede: string; prefixos: string; re: RegExp }> = [
+  { id: 'mpesa', nome: 'M-Pesa', rede: 'Vodacom', prefixos: '84 ou 85', re: /^8[45]/ },
+  { id: 'emola', nome: 'e-Mola', rede: 'Movitel', prefixos: '86 ou 87', re: /^8[67]/ },
 ];
+
+/** Os 9 dígitos do número (aceita +258 / 258 à frente, espaços e traços). */
+function phoneDigits(raw: string): string {
+  const d = raw.replace(/\D/g, '');
+  return d.length > 9 && d.startsWith('258') ? d.slice(3) : d;
+}
+
+/** 84 123 4567, à medida que se escreve. */
+function formatPhone(raw: string): string {
+  const d = phoneDigits(raw).slice(0, 9);
+  return [d.slice(0, 2), d.slice(2, 5), d.slice(5)].filter(Boolean).join(' ');
+}
+
+/** Mensagem clara para o número escrito (null se estiver bem). Espelha a validação do servidor. */
+function phoneError(metodo: PaymentMethod, raw: string): string | null {
+  const m = METODOS.find((x) => x.id === metodo)!;
+  const d = phoneDigits(raw);
+  if (!d) return `Escreva o seu número ${m.nome}.`;
+  if (d.length !== 9) return `O número tem de ter 9 dígitos, por exemplo ${m.id === 'mpesa' ? '84' : '86'} 123 4567.`;
+  if (m.re.test(d)) return null;
+  const outro = METODOS.find((x) => x.id !== metodo && x.re.test(d));
+  if (outro) return `Este número é ${outro.rede}. Escolha ${outro.nome} acima ou use um número ${m.rede} (${m.prefixos}).`;
+  return `Este número não é ${m.rede}. Os números ${m.nome} começam por ${m.prefixos}.`;
+}
 
 export const NOME_METODO: Record<PaymentMethod, string> = { mpesa: 'M-Pesa', emola: 'e-Mola' };
 
@@ -206,7 +230,10 @@ function PaymentCard({
   const [telefone, setTelefone] = useState('');
   const [sending, setSending] = useState(false);
   const [falha, setFalha] = useState<string | null>(null);
+  // O erro do número só aparece depois de sair do campo ou de tentar pagar.
+  const [tocado, setTocado] = useState(false);
   const escolhido = METODOS.find((m) => m.id === metodo)!;
+  const erroNumero = tocado ? phoneError(metodo, telefone) : null;
   const pagamento = cert.pagamento;
   // Última tentativa recusada (saldo, PIN cancelado, sem resposta a tempo...).
   const anterior = pagamento?.estado === 'falhado' ? pagamento : null;
@@ -214,10 +241,15 @@ function PaymentCard({
   async function pagar(e: React.FormEvent) {
     e.preventDefault();
     if (sending || !enabled) return;
+    setTocado(true);
+    if (phoneError(metodo, telefone)) {
+      document.getElementById('telefone')?.focus();
+      return;
+    }
     setSending(true);
     setFalha(null);
     try {
-      await certificateService.pay(token, metodo, telefone);
+      await certificateService.pay(token, metodo, phoneDigits(telefone));
       await onStarted();
     } catch (err) {
       setFalha(err instanceof Error ? err.message : 'Não foi possível iniciar o pagamento.');
@@ -253,7 +285,7 @@ function PaymentCard({
           O pagamento fica disponível depois de a instituição responder ao seu pedido de correcção.
         </p>
       ) : (
-        <form onSubmit={pagar} className={`mt-5 space-y-4 ${enabled ? '' : 'opacity-50'}`} aria-disabled={!enabled}>
+        <form onSubmit={pagar} noValidate className={`mt-5 space-y-4 ${enabled ? '' : 'opacity-50'}`} aria-disabled={!enabled}>
           <fieldset disabled={!enabled}>
             <legend className="mb-2 text-brand-950">Pagar com</legend>
             <div className="grid grid-cols-2 gap-3">
@@ -292,21 +324,31 @@ function PaymentCard({
               type="tel"
               inputMode="numeric"
               autoComplete="tel"
-              required
               disabled={!enabled}
               value={telefone}
-              onChange={(e) => setTelefone(e.target.value)}
+              onChange={(e) => setTelefone(formatPhone(e.target.value))}
+              onBlur={() => setTocado(telefone.trim() !== '')}
               placeholder={metodo === 'mpesa' ? '84 123 4567' : '86 123 4567'}
-              className="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-500"
+              aria-invalid={Boolean(erroNumero)}
+              aria-describedby="telefone-ajuda"
+              className={`w-full rounded-lg border bg-white px-4 py-3 tabular-nums focus:outline-none focus:ring-2 ${
+                erroNumero ? 'border-red-400 focus:ring-red-200' : 'border-slate-200 focus:ring-brand-500'
+              }`}
             />
-            <p className="mt-2 text-sm text-slate-500">
-              Use um número {escolhido.rede} começado por {escolhido.prefixos}.
-            </p>
+            {erroNumero ? (
+              <p id="telefone-ajuda" className="mt-2 flex items-start gap-1.5 text-sm text-red-700" role="alert">
+                <CircleAlert size={16} className="mt-0.5 shrink-0" /> {erroNumero}
+              </p>
+            ) : (
+              <p id="telefone-ajuda" className="mt-2 text-sm text-slate-500">
+                Preencha o seu número.
+              </p>
+            )}
           </div>
 
           <div>
             <Button type="submit" loading={sending} disabled={!enabled} className="w-full py-3.5 text-base">
-              Pagar {cert.taxa_valor} MT {!sending && <ArrowRight size={18} />}
+              Pagar {cert.taxa_valor} MT
             </Button>
             {falha ? (
               <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">

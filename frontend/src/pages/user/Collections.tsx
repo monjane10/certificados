@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
@@ -9,7 +9,8 @@ import { CourseTypeBadge } from '../../components/courses/CourseTypeBadge';
 import { ErrorState, LoadingState } from '../../components/courses/States';
 import { CertificateDocument } from '../../components/certificates/CertificateDocument';
 import { certificateService } from '../../services/certificates';
-import { Eye, MessageCircle } from 'lucide-react';
+import { Eye, FilePlus2, MessageCircle } from 'lucide-react';
+import { EmitDialog } from '../../components/certificates/EmitDialog';
 import { fmtDate } from '../../lib/certificates';
 import { studentLink, whatsappMessage, whatsappNumber, whatsappUrl } from '../../lib/whatsapp';
 import type { Certificate } from '../../types';
@@ -65,6 +66,7 @@ export function UserCertificates() {
   const [stateFilter, setStateFilter] = useState<StateFilter>('todos');
   const [selected, setSelected] = useState<Certificate | null>(null);
   const [viewing, setViewing] = useState<Certificate | null>(null);
+  const [emitOpen, setEmitOpen] = useState(false);
   const [annulling, setAnnulling] = useState<Certificate | null>(null);
   const [motivo, setMotivo] = useState('');
   const [saving, setSaving] = useState(false);
@@ -181,11 +183,16 @@ export function UserCertificates() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-extrabold tracking-tight text-brand-950">Certificados</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Emita certificados a partir da página de cada curso concluído. Aqui consulta e anula os certificados emitidos.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-extrabold tracking-tight text-brand-950">Certificados</h1>
+          <p className="mt-1 text-sm text-slate-500">
+            Emita os certificados dos cursos terminados, consulte-os, envie o link aos formandos e anule quando for preciso.
+          </p>
+        </div>
+        <Button onClick={() => setEmitOpen(true)} className="w-full sm:w-auto">
+          <FilePlus2 size={16} /> Emitir certificados
+        </Button>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_16rem_12rem]">
@@ -233,17 +240,14 @@ export function UserCertificates() {
             title={certs.length === 0 ? 'Ainda sem certificados' : 'Sem resultados'}
             description={
               certs.length === 0
-                ? 'Abra um curso concluído e use «Emitir certificados» para emitir todos os elegíveis de uma vez.'
+                ? 'Use «Emitir certificados» para emitir, de uma vez, os de todos os formandos elegíveis de um curso terminado.'
                 : 'Nenhum certificado corresponde aos filtros.'
             }
             action={
               certs.length === 0 ? (
-                <Link
-                  to="/app/cursos"
-                  className="inline-flex items-center justify-center rounded-button bg-ink px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-950"
-                >
-                  Ir para cursos
-                </Link>
+                <Button onClick={() => setEmitOpen(true)}>
+                  <FilePlus2 size={16} /> Emitir certificados
+                </Button>
               ) : undefined
             }
           />
@@ -423,6 +427,8 @@ export function UserCertificates() {
           </div>
         )}
       </Modal>
+
+      <EmitDialog open={emitOpen} onClose={() => setEmitOpen(false)} onEmitted={() => void load()} />
 
       <Modal
         open={viewing !== null}

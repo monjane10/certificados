@@ -371,7 +371,8 @@ export function DashboardShell({
         </header>
 
         <main className="min-w-0 px-4 pb-6 pt-4 sm:px-6 lg:px-gutter lg:pb-4 lg:pt-4">
-          <div className="mx-auto max-w-[1360px]">{children}</div>
+          {/* O conteúdo ocupa toda a largura disponível ao lado da barra lateral. */}
+          <div className="w-full">{children}</div>
         </main>
       </div>
     </div>

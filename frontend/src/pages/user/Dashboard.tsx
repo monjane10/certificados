@@ -230,7 +230,7 @@ export function UserDashboard() {
               to="/app/certificados"
               icon={FileBadge}
               title="Consultar certificados"
-              description="Emissão disponível em breve."
+              description="Emita, consulte e envie os certificados aos formandos."
             />
           </div>
           <div className="mt-2.5">
