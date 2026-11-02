@@ -12,13 +12,11 @@ import {
   Printer,
   Share2,
   ShieldCheck,
-  Smartphone,
   WifiOff,
 } from 'lucide-react';
 import { certificateService } from '../../services/certificates';
 import { ApiError } from '../../lib/http';
 import { brandingUrl } from '../../lib/branding';
-import { fmtDate } from '../../lib/certificates';
 import { whatsappNumber, whatsappUrl } from '../../lib/whatsapp';
 import { CertificateDocument } from '../../components/certificates/CertificateDocument';
 import { CertificateFullscreen } from '../../components/certificates/CertificateFullscreen';
@@ -26,16 +24,10 @@ import { downloadImage, downloadPdf } from '../../components/certificates/export
 import { PRINT_CSS } from '../../components/certificates/print';
 import { verifyLink } from '../../components/certificates/shared';
 import { Modal } from '../../components/courses/Modal';
+import { Checkout, MethodLogo, NOME_METODO } from '../../components/student/Checkout';
 import { Button } from '../../components/ui/Button';
 import { Spinner } from '../../components/ui/Spinner';
-import type { PaymentMethod, StudentCertificate, StudentPayment } from '../../types';
-
-const METODOS: Array<{ id: PaymentMethod; nome: string; rede: string; prefixos: string }> = [
-  { id: 'mpesa', nome: 'M-Pesa', rede: 'Vodacom', prefixos: '84 ou 85' },
-  { id: 'emola', nome: 'e-Mola', rede: 'Movitel', prefixos: '86 ou 87' },
-];
-
-const NOME_METODO: Record<PaymentMethod, string> = { mpesa: 'M-Pesa', emola: 'e-Mola' };
+import type { StudentCertificate } from '../../types';
 
 /** Enquanto o pagamento está pendente, a página consulta o estado a este ritmo. */
 const POLL_MS = 3000;
@@ -49,8 +41,8 @@ const secondaryAction =
 
 /**
  * Página do formando (link privado enviado pela instituição). Antes do
- * pagamento: confirmação dos dados, pré-visualização com marca de água e
- * pagamento; depois: comprovativo e certificado para descarregar.
+ * pagamento: só a confirmação dos dados e o pagamento (Checkout); depois:
+ * comprovativo e certificado para descarregar.
  */
 export function StudentCertificatePage() {
   const { token = '' } = useParams<{ token: string }>();
@@ -89,6 +81,18 @@ export function StudentCertificatePage() {
   if (loadError && !cert) return <LoadErrorPage error={loadError} onRetry={() => void load()} />;
   if (!cert) return <div className="p-8"><Spinner label="A carregar o seu certificado..." /></div>;
 
+  const correctionModal = (
+    <CorrectionModal
+      open={correcting}
+      token={token}
+      onClose={() => setCorrecting(false)}
+      onSent={(correcao) => {
+        setCert((prev) => (prev ? { ...prev, correcao } : prev));
+        setCorrecting(false);
+      }}
+    />
+  );
+
   if (cert.estado === 'anulado') {
     return (
       <div className="mx-auto max-w-md space-y-4 p-8 text-center">
@@ -103,57 +107,43 @@ export function StudentCertificatePage() {
     );
   }
 
-  const watermark = cert.pago ? undefined : 'Pré-visualização';
+  if (!cert.pago) {
+    return (
+      <>
+        <Checkout cert={cert} token={token} onStarted={load} onReportError={() => setCorrecting(true)} />
+        {correctionModal}
+      </>
+    );
+  }
+
+  const reportError = cert.correcao ? undefined : () => setCorrecting(true);
 
   return (
-    <div className="min-h-screen bg-slate-100 py-6 print:bg-white print:py-0">
+    <div className="min-h-screen bg-slate-100 py-6 sm:py-10 print:bg-white print:py-0">
       <style>{PRINT_CSS}</style>
-      {/* A pré-visualização não se imprime: só o certificado pago. */}
-      {!cert.pago && <style>{'@media print { .cert-frame { display: none !important; } }'}</style>}
 
+      {/* Depois do pagamento: o certificado em grande, para descarregar. */}
       <div className="mx-auto max-w-[1123px] space-y-4 px-4 print:max-w-none print:px-0">
-        <IssuerHeader cert={cert} />
-
-        {cert.correcao && <CorrectionPending cert={cert} />}
-
-        {cert.pago ? (
+          <IssuerHeader cert={cert} />
+          {cert.correcao && <CorrectionPending cert={cert} />}
           <PaidPanel cert={cert} />
-        ) : cert.correcao ? null : cert.pagamento?.estado === 'pendente' ? (
-          <PendingPanel pagamento={cert.pagamento} />
-        ) : (
-          <PaymentForm cert={cert} token={token} onStarted={load} onReportError={() => setCorrecting(true)} />
-        )}
-
-        <div className="space-y-2">
-          <div className="flex justify-end print:hidden">
-            <button
-              type="button"
-              onClick={() => setFullscreen(true)}
-              className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-900 hover:underline"
-            >
-              <Expand size={15} /> Ver em ecrã inteiro
-            </button>
-          </div>
-          {cert.pago ? (
+          <div className="space-y-2">
+            <div className="flex justify-end print:hidden">
+              <button
+                type="button"
+                onClick={() => setFullscreen(true)}
+                className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-900 hover:underline"
+              >
+                <Expand size={15} /> Ver em ecrã inteiro
+              </button>
+            </div>
             <ExportableCertificate cert={cert} />
-          ) : (
-            <CertificateDocument cert={cert} watermark={watermark} className="shadow-lg print:shadow-none" />
-          )}
+          </div>
+          <InfoPanel cert={cert} onReportError={reportError} />
         </div>
 
-        <InfoPanel cert={cert} onReportError={cert.correcao ? undefined : () => setCorrecting(true)} />
-      </div>
-
-      {fullscreen && <CertificateFullscreen cert={cert} watermark={watermark} onClose={closeFullscreen} />}
-      <CorrectionModal
-        open={correcting}
-        token={token}
-        onClose={() => setCorrecting(false)}
-        onSent={(correcao) => {
-          setCert((prev) => (prev ? { ...prev, correcao } : prev));
-          setCorrecting(false);
-        }}
-      />
+      {fullscreen && <CertificateFullscreen cert={cert} onClose={closeFullscreen} />}
+      {correctionModal}
     </div>
   );
 }
@@ -243,183 +233,6 @@ function CorrectionPending({ cert }: { cert: StudentCertificate }) {
   );
 }
 
-function PendingPanel({ pagamento }: { pagamento: StudentPayment }) {
-  const nome = NOME_METODO[pagamento.metodo];
-  return (
-    <div className="rounded-card border border-brand-500/30 bg-white p-4 sm:p-5 print:hidden" role="status" aria-live="polite">
-      <div className="flex items-start gap-3">
-        <span className="mt-0.5 h-5 w-5 shrink-0 animate-spin rounded-full border-2 border-brand-500/30 border-t-brand-900" aria-hidden />
-        <div className="space-y-1">
-          <p className="font-bold text-brand-950">A aguardar a confirmação no telemóvel</p>
-          <p className="flex items-center gap-1.5 text-sm text-slate-600">
-            <Smartphone size={15} /> Enviámos um pedido de {pagamento.valor} MT para o número {pagamento.telefone}. Introduza o
-            PIN {nome} no telemóvel para confirmar.
-          </p>
-          <p className="text-xs text-slate-500">
-            Esta página actualiza-se sozinha. Pode fechá-la e voltar mais tarde pelo mesmo link. Referência {pagamento.referencia}.
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function PaymentForm({
-  cert,
-  token,
-  onStarted,
-  onReportError,
-}: {
-  cert: StudentCertificate;
-  token: string;
-  onStarted: () => Promise<void>;
-  onReportError: () => void;
-}) {
-  const [confirmado, setConfirmado] = useState(false);
-  const [metodo, setMetodo] = useState<PaymentMethod>(cert.pagamento?.metodo ?? 'mpesa');
-  const [telefone, setTelefone] = useState('');
-  const [sending, setSending] = useState(false);
-  const [falha, setFalha] = useState<string | null>(null);
-  const escolhido = METODOS.find((m) => m.id === metodo)!;
-  // Última tentativa recusada (saldo, PIN cancelado, sem resposta a tempo...).
-  const anterior = cert.pagamento?.estado === 'falhado' ? cert.pagamento : null;
-
-  async function pagar(e: React.FormEvent) {
-    e.preventDefault();
-    if (sending || !confirmado) return;
-    setSending(true);
-    setFalha(null);
-    try {
-      await certificateService.pay(token, metodo, telefone);
-      await onStarted();
-    } catch (err) {
-      setFalha(err instanceof Error ? err.message : 'Não foi possível iniciar o pagamento.');
-    } finally {
-      setSending(false);
-    }
-  }
-
-  const tecnico = cert.tipo === 'tecnico_profissional';
-
-  return (
-    <form onSubmit={pagar} className="space-y-5 rounded-card border border-line bg-white p-4 sm:p-5 print:hidden">
-      <section>
-        <h2 className="text-base font-bold text-brand-950">1. Confirme os seus dados</h2>
-        <p className="mt-1 text-sm text-slate-500">É assim que vão aparecer no certificado. Confira antes de pagar.</p>
-        <dl className="mt-3 grid gap-x-6 gap-y-2 rounded-lg bg-slate-50 p-3 text-sm sm:grid-cols-2">
-          <div className="sm:col-span-2">
-            <dt className="text-xs text-slate-500">Nome</dt>
-            <dd className="font-semibold text-brand-950">{cert.formando_nome}</dd>
-          </div>
-          <div className="sm:col-span-2">
-            <dt className="text-xs text-slate-500">Curso</dt>
-            <dd className="font-semibold text-brand-950">{cert.curso_nome}</dd>
-          </div>
-          {tecnico && (
-            <div>
-              <dt className="text-xs text-slate-500">Nota final</dt>
-              <dd className="font-semibold tabular-nums text-brand-950">{cert.nota} valores</dd>
-            </div>
-          )}
-          <div>
-            <dt className="text-xs text-slate-500">Carga horária</dt>
-            <dd className="font-semibold tabular-nums text-brand-950">{cert.carga_horaria} horas</dd>
-          </div>
-          <div>
-            <dt className="text-xs text-slate-500">Período</dt>
-            <dd className="font-semibold text-brand-950">
-              {cert.data_abertura ? `${fmtDate(cert.data_abertura)} a ` : 'Concluído a '}
-              {fmtDate(cert.data_encerramento)}
-            </dd>
-          </div>
-        </dl>
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-          <label className="flex items-start gap-2 text-sm text-brand-950">
-            <input
-              type="checkbox"
-              checked={confirmado}
-              onChange={(e) => setConfirmado(e.target.checked)}
-              className="mt-0.5 h-4 w-4 rounded border-slate-300 accent-brand-900"
-            />
-            Confirmo que os meus dados estão correctos.
-          </label>
-          <button type="button" onClick={onReportError} className="text-sm font-semibold text-red-700 hover:underline">
-            Há um erro nos dados
-          </button>
-        </div>
-      </section>
-
-      <section className={confirmado ? '' : 'pointer-events-none opacity-50'} aria-disabled={!confirmado}>
-        <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h2 className="text-base font-bold text-brand-950">2. Pague a taxa do certificado</h2>
-          <p className="text-2xl font-extrabold tabular-nums text-brand-950">{cert.taxa_valor} MT</p>
-        </div>
-        <p className="mt-1 text-sm text-slate-500">
-          Depois do pagamento descarrega o certificado em PDF ou imagem, e o código passa a ser válido na verificação
-          pública.
-        </p>
-
-        <div className="mt-4 grid gap-3 sm:grid-cols-[auto_1fr_auto] sm:items-end">
-          <fieldset disabled={!confirmado}>
-            <legend className="mb-1.5 text-sm font-medium text-brand-950">Pagar com</legend>
-            <div className="grid grid-cols-2 gap-1 rounded-xl bg-slate-100 p-1">
-              {METODOS.map((m) => (
-                <button
-                  key={m.id}
-                  type="button"
-                  onClick={() => setMetodo(m.id)}
-                  aria-pressed={metodo === m.id}
-                  className={`rounded-lg px-4 py-2 text-sm font-semibold ${
-                    metodo === m.id ? 'bg-white text-brand-900 shadow-card' : 'text-slate-500'
-                  }`}
-                >
-                  {m.nome}
-                </button>
-              ))}
-            </div>
-          </fieldset>
-          <div className="space-y-1.5">
-            <label htmlFor="telefone" className="block text-sm font-medium text-brand-950">
-              Número {escolhido.nome} ({escolhido.rede})
-            </label>
-            <input
-              id="telefone"
-              type="tel"
-              inputMode="numeric"
-              autoComplete="tel"
-              required
-              disabled={!confirmado}
-              value={telefone}
-              onChange={(e) => setTelefone(e.target.value)}
-              placeholder={`Ex.: ${metodo === 'mpesa' ? '84' : '86'} 123 4567`}
-              className="w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
-            />
-          </div>
-          <Button type="submit" loading={sending} disabled={!confirmado} className="w-full sm:w-auto">
-            Pagar {cert.taxa_valor} MT
-          </Button>
-        </div>
-
-        {falha ? (
-          <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
-            {falha}
-          </p>
-        ) : anterior ? (
-          <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
-            O pagamento por {NOME_METODO[anterior.metodo]} de {fmtDateTime(anterior.criado_em)} não foi concluído
-            {anterior.erro ? `: ${anterior.erro}` : '.'} Pode tentar de novo.
-          </p>
-        ) : (
-          <p className="mt-3 text-xs text-slate-500">
-            Use um número {escolhido.rede} começado por {escolhido.prefixos}. Vai receber um pedido no telemóvel para
-            confirmar com o PIN.
-          </p>
-        )}
-      </section>
-    </form>
-  );
-}
-
 function PaidPanel({ cert }: { cert: StudentCertificate }) {
   const p = cert.pagamento;
   return (
@@ -444,7 +257,9 @@ function PaidPanel({ cert }: { cert: StudentCertificate }) {
               </div>
               <div>
                 <dt className="text-xs text-slate-500">Método</dt>
-                <dd className="font-semibold text-brand-950">{NOME_METODO[p.metodo]}</dd>
+                <dd className="flex items-center gap-1.5 font-semibold text-brand-950">
+                  <MethodLogo metodo={p.metodo} className="h-5" /> {NOME_METODO[p.metodo]}
+                </dd>
               </div>
               <div>
                 <dt className="text-xs text-slate-500">Número</dt>
