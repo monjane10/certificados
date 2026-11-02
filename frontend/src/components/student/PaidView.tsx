@@ -156,7 +156,7 @@ function PaidContent({
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_400px] print:block">
-      {/* Certificado (no telemóvel aparece depois das acções). */}
+      {/* Certificado primeiro; as acções e o pagamento vêm a seguir (ao lado, em ecrãs largos). */}
       <section className="rounded-card border border-slate-200 bg-slate-50 p-4 sm:p-6 print:border-0 print:bg-transparent print:p-0">
         <div className="mb-4 flex items-center justify-between text-sm text-slate-600 print:hidden">
           <span className="inline-flex items-center gap-2">
@@ -169,7 +169,7 @@ function PaidContent({
         <CertificateDocument cert={cert} canvasRef={canvas} className="bg-white shadow-sm print:shadow-none" />
       </section>
 
-      <aside className="order-first self-start rounded-card border border-slate-200 bg-white p-5 sm:p-6 lg:order-none print:hidden">
+      <aside className="self-start rounded-card border border-slate-200 bg-white p-5 sm:p-6 print:hidden">
         <div className="space-y-3">
           <button
             type="button"
