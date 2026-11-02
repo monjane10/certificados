@@ -58,8 +58,7 @@ export function RegisterPage() {
       <Card>
         <h1 className="text-2xl font-extrabold text-brand-950">Criar conta</h1>
         <p className="mt-1 text-sm text-slate-500">
-          Registo com email e password (Supabase Auth). O telefone é apenas dado de perfil -
-          sem verificação por SMS nesta fase. O código de utilizador é gerado pelo sistema.
+          Crie a conta gratuita da sua instituição para começar a emitir certificados.
         </p>
         <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4" noValidate>
           <Input label="Nome da escola, instituição ou profissional" placeholder="Ex.: Escola Secundária X" required

@@ -37,7 +37,7 @@ function fmtDateTime(iso: string): string {
 }
 
 const secondaryAction =
-  'inline-flex items-center justify-center gap-1.5 rounded-button border border-line bg-white px-4 py-2.5 text-sm font-semibold text-ink hover:bg-soft disabled:opacity-60';
+  'inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-button border border-line bg-white px-3 py-2.5 text-sm font-semibold text-ink hover:bg-soft disabled:opacity-60 sm:px-4';
 
 /**
  * Página do formando (link privado enviado pela instituição). Antes do
@@ -323,8 +323,13 @@ function ExportableCertificate({ cert }: { cert: StudentCertificate }) {
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap gap-2 print:hidden">
-        <Button onClick={() => void exportAs('pdf')} loading={busy === 'pdf'} disabled={busy !== null}>
+      <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap print:hidden">
+        <Button
+          onClick={() => void exportAs('pdf')}
+          loading={busy === 'pdf'}
+          disabled={busy !== null}
+          className="col-span-2 py-3 sm:py-2.5"
+        >
           {busy !== 'pdf' && <Download size={16} />} Descarregar PDF
         </Button>
         <button type="button" onClick={() => void exportAs('png')} disabled={busy !== null} className={secondaryAction}>

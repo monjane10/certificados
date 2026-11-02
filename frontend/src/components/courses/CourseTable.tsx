@@ -98,14 +98,12 @@ export function CourseCards({
     <ul className="grid gap-3 md:grid-cols-2">
       {courses.map((c) => (
         <li key={c.id} className="flex flex-col rounded-card border border-line bg-white">
-          <div className="flex items-start justify-between gap-3 px-4 pt-3.5">
-            <div className="min-w-0">
-              <Link to={`/app/cursos/${c.id}`} className="break-words font-semibold text-ink hover:underline">
-                {c.nome}
-              </Link>
-              <p className="mt-0.5 font-mono text-xs text-muted">{c.codigo}</p>
-            </div>
-            <div className="flex shrink-0 flex-col items-end gap-1">
+          <div className="min-w-0 px-4 pt-3.5">
+            <Link to={`/app/cursos/${c.id}`} className="break-words font-semibold text-ink hover:underline">
+              {c.nome}
+            </Link>
+            <p className="mt-0.5 font-mono text-xs text-muted">{c.codigo}</p>
+            <div className="mt-2 flex flex-wrap gap-1.5">
               <CourseStatusBadge status={c.status} />
               <CourseTypeBadge tipo={c.tipo} />
             </div>

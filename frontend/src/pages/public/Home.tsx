@@ -13,9 +13,14 @@ import {
   UserCheck,
   Wrench,
 } from 'lucide-react';
-import { Button } from '../../components/ui/Button';
 import { BrandName } from '../../components/layout/BrandName';
 import { BRAND } from '../../lib/brand';
+
+// Links com aspecto de botão (um <button> dentro de um <a> não é HTML válido).
+const ctaBase =
+  'inline-flex items-center justify-center gap-2 rounded-lg font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2';
+const ctaPrimary = `${ctaBase} bg-emerald-600 text-white hover:bg-emerald-500 focus-visible:ring-emerald-400`;
+const ctaSecondary = `${ctaBase} border border-line bg-white text-ink hover:bg-soft focus-visible:ring-white/60`;
 
 const STEPS = [
   {
@@ -104,16 +109,12 @@ export function HomePage() {
             Emita certificados com o seu logótipo e assinatura, envie-os aos formandos pelo WhatsApp e deixe que
             qualquer pessoa confirme a autenticidade pelo código QR.
           </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Link to="/registo">
-              <Button className="rounded-lg bg-emerald-600 px-7 py-3 text-base hover:bg-emerald-500">
-                Criar conta grátis
-              </Button>
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+            <Link to="/registo" className={`${ctaPrimary} px-7 py-3 text-base`}>
+              Criar conta grátis
             </Link>
-            <Link to="/verificar">
-              <Button variant="secondary" className="px-7 py-3 text-base">
-                <QrCode size={18} /> Verificar um certificado
-              </Button>
+            <Link to="/verificar" className={`${ctaSecondary} px-7 py-3 text-base`}>
+              <QrCode size={18} /> Verificar um certificado
             </Link>
           </div>
         </div>
@@ -226,8 +227,8 @@ export function HomePage() {
               <li>{BRAND.telefone}</li>
               <li>{BRAND.local}</li>
             </ul>
-            <Link to="/registo" className="mt-6 inline-flex">
-              <Button className="rounded-lg bg-emerald-600 px-6 hover:bg-emerald-500">Criar conta grátis</Button>
+            <Link to="/registo" className={`${ctaPrimary} mt-6 px-6 py-2.5 text-sm`}>
+              Criar conta grátis
             </Link>
           </div>
         </div>

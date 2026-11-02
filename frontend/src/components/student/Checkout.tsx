@@ -76,7 +76,7 @@ export function Checkout({
           <p className="text-xl font-extrabold tracking-tight text-brand-950 sm:text-2xl">{cert.emissor_nome}</p>
         </header>
 
-        <div className="py-10 text-center sm:py-12">
+        <div className="py-8 text-center sm:py-12">
           <h1 className="text-3xl font-extrabold tracking-tight text-brand-950 sm:text-4xl">O seu certificado</h1>
           <p className="mt-2 text-slate-500 sm:text-lg">Confirme os dados e conclua o pagamento para descarregar.</p>
           <Steps active={passo} />
@@ -119,14 +119,17 @@ const STEPS = ['Confirmar dados', 'Pagamento', 'Descarregar'];
 
 function Steps({ active }: { active: number }) {
   return (
-    <ol className="mt-6 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-sm sm:text-base">
+    <ol className="mx-auto mt-6 grid max-w-sm grid-cols-3 gap-2 text-xs sm:flex sm:max-w-none sm:items-center sm:justify-center sm:gap-3 sm:text-base">
       {STEPS.map((label, i) => {
         const n = i + 1;
         const on = n === active;
         return (
-          <li key={label} className="flex items-center gap-3">
-            {i > 0 && <span className="text-slate-300" aria-hidden>-</span>}
-            <span className={`flex items-center gap-2 ${on ? 'font-semibold text-brand-950' : 'text-slate-400'}`} aria-current={on ? 'step' : undefined}>
+          <li key={label} className="flex items-center justify-center gap-3">
+            {i > 0 && <span className="hidden text-slate-300 sm:inline" aria-hidden>-</span>}
+            <span
+              className={`flex flex-col items-center gap-0.5 sm:flex-row sm:gap-2 ${on ? 'font-semibold text-brand-950' : 'text-slate-400'}`}
+              aria-current={on ? 'step' : undefined}
+            >
               <span className={on ? 'font-bold' : ''}>{String(n).padStart(2, '0')}</span> {label}
             </span>
           </li>
@@ -288,7 +291,7 @@ function PaymentCard({
         <form onSubmit={pagar} noValidate className={`mt-5 space-y-4 ${enabled ? '' : 'opacity-50'}`} aria-disabled={!enabled}>
           <fieldset disabled={!enabled}>
             <legend className="mb-2 text-brand-950">Pagar com</legend>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-3 sm:grid-cols-2">
               {METODOS.map((m) => {
                 const on = metodo === m.id;
                 return (
@@ -308,7 +311,7 @@ function PaymentCard({
                       {on && <span className="h-2.5 w-2.5 rounded-full bg-brand-900" />}
                     </span>
                     <MethodLogo metodo={m.id} />
-                    {m.nome}
+                    <span className="whitespace-nowrap">{m.nome}</span>
                   </button>
                 );
               })}
