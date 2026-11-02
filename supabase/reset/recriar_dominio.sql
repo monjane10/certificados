@@ -1,4 +1,4 @@
--- RECRIAR O DOMÍNIO DO ZERO - Microlegal Certificados
+-- RECRIAR O DOMÍNIO DO ZERO - Diploma.mz
 -- ============================================================================
 -- APAGA TODOS os cursos, formandos, matrículas, certificados, pedidos de
 -- correcção e PAGAMENTOS e recria as tabelas, funções, triggers e políticas

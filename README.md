@@ -1,4 +1,4 @@
-# Microlegal - Plataforma de Gestão e Emissão de Certificados Digitais
+# Diploma.mz - Plataforma de Gestão e Emissão de Certificados Digitais
 
 Sprint 1: base do projecto, autenticação real (Supabase Auth), autorização por perfis
 (`admin` / `user`), dashboards separados, perfis de utilizador e página pública de
@@ -27,7 +27,7 @@ Dois projectos **independentes** (sem npm workspaces) + SQL versionado:
   Não partilha dependências entre frontend e backend.
 
 ```text
-microlegal-certificados/
+diploma-mz/
 ├── frontend/               # React + TypeScript + Vite + Tailwind + React Router
 │   └── src/
 │       ├── components/     # ui/ (Button, Input, Card, Spinner, EmptyState), layout/
@@ -260,7 +260,7 @@ Preencher:
     - emitir certificados exige o curso encerrado.
 19. Aplicar a migração `20261029000000_pagamento_certificados.sql` (DEPOIS
     da anterior). Taxa do certificado paga pelo formando (participação
-    100 MT, técnico-profissional 150 MT), recebida pela Microlegal:
+    100 MT, técnico-profissional 150 MT), recebida pelo Diploma.mz:
     - cada certificado tem um link privado (`/c/<acesso_token>`) que a
       instituição envia pelo seu próprio WhatsApp (mensagem pronta, sem API);
     - o formando vê uma pré-visualização com marca de água e paga por M-Pesa

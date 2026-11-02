@@ -1,4 +1,4 @@
-# Microlegal - Frontend (Sprint 1)
+# Diploma.mz - Frontend (Sprint 1)
 
 React 18 + TypeScript + Vite + Tailwind CSS + React Router. Projecto **independente**:
 instala-se, configura-se e corre-se a partir desta pasta, sem depender da raiz nem

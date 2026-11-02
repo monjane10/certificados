@@ -24,7 +24,7 @@ export default {
           600: '#15803d',
           700: '#166534',
         },
-        // Tokens da interface do painel (referência visual Microlegal).
+        // Tokens da interface do painel (referência visual Diploma.mz).
         ink: '#11245C', // azul-marinho principal
         muted: '#7486A8', // texto secundário
         soft: '#EDF5FF', // fundos suaves

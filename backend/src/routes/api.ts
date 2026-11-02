@@ -52,7 +52,7 @@ import {
 const router = Router();
 
 router.get('/health', (_req, res) => {
-  res.json({ status: 'ok', service: 'microlegal-certificados-server', time: new Date().toISOString() });
+  res.json({ status: 'ok', service: 'diploma-mz-server', time: new Date().toISOString() });
 });
 
 router.get('/me', sensitiveLimiter, authenticate, getMe);

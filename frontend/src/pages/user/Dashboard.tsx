@@ -16,8 +16,9 @@ import { courseService } from '../../services/courses';
 import { certificateService } from '../../services/certificates';
 import type { Course } from '../../types';
 import bannerIllustration from '../../assets/banner-illustration.svg';
+import { BRAND } from '../../lib/brand';
 
-const SUPPORT_EMAIL = 'geral@microlegal.co.mz';
+const SUPPORT_EMAIL = BRAND.email;
 const RECENT_LIMIT = 3;
 
 const panel = 'rounded-card border border-line bg-white px-5 pb-3.5 pt-3.5';

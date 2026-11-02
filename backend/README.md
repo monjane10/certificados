@@ -1,4 +1,4 @@
-# Microlegal - Backend (Sprint 1)
+# Diploma.mz - Backend (Sprint 1)
 
 Node.js + Express + TypeScript + Zod. Projecto **independente**: instala-se,
 configura-se e corre-se a partir desta pasta, sem depender da raiz nem do frontend.

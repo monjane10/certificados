@@ -4,6 +4,8 @@ import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent, type R
 import { toast } from 'sonner';
 import { useAuth } from '../../contexts/AuthContext';
 import { GlobalSearch, type SearchScope } from './GlobalSearch';
+import { BRAND } from '../../lib/brand';
+import { BrandName } from './BrandName';
 
 export interface ShellLink {
   to: string;
@@ -229,9 +231,9 @@ export function DashboardShell({
             </Tip>
           ) : (
             <>
-              <Link to="/" className="flex items-center gap-3" aria-label="Microlegal - página inicial">
+              <Link to="/" className="flex items-center gap-3" aria-label={`${BRAND.nome} - página inicial`}>
                 <LogoMark />
-                <span className="text-xl font-bold tracking-tight text-ink">Microlegal</span>
+                <BrandName className="text-xl font-bold tracking-tight text-ink" />
               </Link>
               <Tip label="Fechar barra lateral" hint={mode === 'full' ? SHORTCUT : undefined} side="bottom">
                 <button

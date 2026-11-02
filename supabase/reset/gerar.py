@@ -42,7 +42,7 @@ FUNCOES = [
 # Criadas directamente na BD, fora das migrações.
 FUNCOES_FORA = ['definir_estado_curso', 'actualizar_estados_cursos', 'calcular_estado_curso']
 
-CABECALHO = """-- RECRIAR O DOMÍNIO DO ZERO - Microlegal Certificados
+CABECALHO = """-- RECRIAR O DOMÍNIO DO ZERO - Diploma.mz
 -- ============================================================================
 -- APAGA TODOS os cursos, formandos, matrículas, certificados, pedidos de
 -- correcção e PAGAMENTOS e recria as tabelas, funções, triggers e políticas

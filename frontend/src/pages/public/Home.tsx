@@ -1,77 +1,91 @@
 import { Link } from 'react-router-dom';
 import {
-  BadgeCheck,
+  Building2,
+  Download,
   FileBadge,
   GraduationCap,
-  LayoutDashboard,
-  Search,
+  Layers,
+  MessageCircle,
+  Palette,
+  QrCode,
   ShieldCheck,
-  Users,
-  Zap,
+  Smartphone,
+  UserCheck,
+  Wrench,
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
+import { BrandName } from '../../components/layout/BrandName';
+import { BRAND } from '../../lib/brand';
+
+const STEPS = [
+  {
+    t: 'Registe cursos e formandos',
+    d: 'Crie o curso, matricule os formandos e lance as notas nos cursos técnico-profissionais.',
+  },
+  {
+    t: 'Emita com um clique',
+    d: 'Quando o curso termina, encerre-o e emita os certificados de todos os formandos elegíveis de uma vez.',
+  },
+  {
+    t: 'Envie pelo WhatsApp',
+    d: 'Cada formando recebe um link privado, paga a taxa por M-Pesa ou e-Mola e descarrega o certificado.',
+  },
+  {
+    t: 'Verificação por QR',
+    d: 'Quem receber o certificado lê o código QR e confirma na hora que é autêntico.',
+  },
+];
 
 const WHY = [
   {
-    icon: <Zap size={22} />,
-    t: 'Eficiência Operacional',
-    d: 'Menos papel e tarefas manuais: certificados geridos digitalmente do início ao fim.',
+    icon: <Building2 size={22} />,
+    t: 'Para a instituição',
+    d: 'Sem papel, sem impressões e sem custos: a conta é gratuita e a taxa do certificado é paga pelo formando.',
   },
   {
-    icon: <LayoutDashboard size={22} />,
-    t: 'Gestão Integrada',
-    d: 'Formações, formandos e certificados centralizados numa única plataforma.',
+    icon: <GraduationCap size={22} />,
+    t: 'Para o formando',
+    d: 'Recebe o certificado no telemóvel, paga com M-Pesa ou e-Mola e guarda-o em PDF para sempre.',
   },
   {
     icon: <ShieldCheck size={22} />,
-    t: 'Segurança',
-    d: 'Acesso por perfis, permissões e autorização efectiva no servidor.',
+    t: 'Para quem contrata',
+    d: 'Cada certificado tem código único e QR: falsificar deixa de compensar, verificar leva segundos.',
   },
 ];
 
 const FEATURES = [
-  {
-    icon: <LayoutDashboard size={22} />,
-    t: 'Painel de gestão',
-    d: 'Dashboard próprio para administradores e para cada instituição.',
-    soon: false,
-  },
-  {
-    icon: <GraduationCap size={22} />,
-    t: 'Gestão de formações',
-    d: 'Registo de formações e formandos num só lugar.',
-    soon: true,
-  },
-  {
-    icon: <FileBadge size={22} />,
-    t: 'Emissão de certificados',
-    d: 'Participação e Técnico-Profissional, com código único.',
-    soon: true,
-  },
-  {
-    icon: <Search size={22} />,
-    t: 'Verificação pública',
-    d: 'Qualquer pessoa confirma um certificado pelo código.',
-    soon: true,
-  },
-  {
-    icon: <Users size={22} />,
-    t: 'Gestão de utilizadores',
-    d: 'Administração de contas e instituições na plataforma.',
-    soon: false,
-  },
-  {
-    icon: <BadgeCheck size={22} />,
-    t: 'Perfis e permissões',
-    d: 'Separação entre administrador e utilizador em todo o sistema.',
-    soon: false,
-  },
+  { icon: <Layers size={22} />, t: 'Emissão em lote', d: 'Todos os certificados de um curso num só clique, só para quem cumpre os critérios.' },
+  { icon: <Palette size={22} />, t: 'Modelos com a sua marca', d: 'Cinco modelos, com o logótipo da instituição e a assinatura do responsável.' },
+  { icon: <MessageCircle size={22} />, t: 'Envio pelo WhatsApp', d: 'Mensagem pronta com o link do formando, enviada do WhatsApp da instituição.' },
+  { icon: <Smartphone size={22} />, t: 'M-Pesa e e-Mola', d: 'O formando paga no telemóvel e recebe o comprovativo na página do certificado.' },
+  { icon: <Download size={22} />, t: 'PDF e imagem', d: 'Certificado em PDF A4 para imprimir e em imagem para partilhar.' },
+  { icon: <QrCode size={22} />, t: 'Verificação pública', d: 'Código QR e código único em cada certificado, verificáveis por qualquer pessoa.' },
+  { icon: <Wrench size={22} />, t: 'Correcção de dados', d: 'O formando avisa de um erro; ao reemitir, o pagamento passa para o certificado novo.' },
+  { icon: <UserCheck size={22} />, t: 'Anulação rastreável', d: 'Certificados anulados nunca se apagam: a verificação mostra que foram anulados.' },
 ];
 
 const FAQS = [
-  ['Quando posso emitir certificados?', 'Quando o curso estiver concluído: com um clique emite os certificados de todos os formandos elegíveis (participação: todos; técnico-profissional: nota igual ou superior a 10).'],
-  ['Como se valida um certificado?', 'Pelo código único (CERT-…), na página de verificação. O QR code chega depois.'],
-  ['Vou pagar alguma coisa?', 'Não. Os preços indicados (100 MT / 150 MT) são apenas referência comercial.'],
+  [
+    'Quanto custa à instituição?',
+    'Nada. A conta é gratuita. Cada formando paga a taxa do seu certificado (100 MT de participação, 150 MT técnico-profissional) para o desbloquear.',
+  ],
+  [
+    'Quando posso emitir certificados?',
+    'Quando o curso terminar: encerre-o e emita, com um clique, os certificados de todos os formandos elegíveis (participação: todos; técnico-profissional: nota igual ou superior a 10).',
+  ],
+  [
+    'Como recebe o formando o certificado?',
+    'Por um link privado que a instituição envia pelo WhatsApp. O formando confirma os seus dados, paga por M-Pesa ou e-Mola e descarrega o certificado em PDF ou imagem.',
+  ],
+  [
+    'Como se verifica um certificado?',
+    'Lendo o código QR com a câmara do telemóvel, ou introduzindo o código (CERT-…) na página de verificação.',
+  ],
+  [
+    'E se houver um erro nos dados?',
+    'O formando avisa a instituição a partir do seu link. A instituição corrige e emite de novo; se o formando já tiver pago, não paga outra vez.',
+  ],
 ];
 
 export function HomePage() {
@@ -81,14 +95,14 @@ export function HomePage() {
       <section className="bg-brand-950 text-white">
         <div className="mx-auto max-w-6xl px-4 py-16 md:py-24">
           <p className="text-sm font-bold uppercase tracking-widest text-emerald-400">
-            Bem-vindo à Microlegal
+            <BrandName suffixClass="text-white" />
           </p>
           <h1 className="mt-4 max-w-3xl text-4xl font-extrabold leading-tight tracking-tight md:text-5xl">
-            Certificados digitais para a sua instituição de formação.
+            Certificados digitais verificáveis para a sua instituição de formação.
           </h1>
           <p className="mt-5 max-w-2xl text-lg leading-relaxed text-slate-300">
-            Gira formações, emita certificados profissionais e permita que qualquer
-            pessoa confirme a sua autenticidade - tudo numa única plataforma.
+            Emita certificados com o seu logótipo e assinatura, envie-os aos formandos pelo WhatsApp e deixe que
+            qualquer pessoa confirme a autenticidade pelo código QR.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link to="/registo">
@@ -96,31 +110,39 @@ export function HomePage() {
                 Criar conta grátis
               </Button>
             </Link>
-            <Link to="/#funcionalidades">
+            <Link to="/verificar">
               <Button variant="secondary" className="px-7 py-3 text-base">
-                Ver funcionalidades
+                <QrCode size={18} /> Verificar um certificado
               </Button>
             </Link>
           </div>
         </div>
       </section>
 
-      {/* O QUE FAZEMOS */}
-      <section className="mx-auto max-w-6xl px-4 py-14 text-center md:py-16">
-        <h2 className="text-2xl font-extrabold tracking-tight text-brand-950 md:text-3xl">
-          O Que Fazemos
-        </h2>
-        <p className="mx-auto mt-3 max-w-2xl text-slate-600">
-          Uma solução completa para modernizar a certificação de formações,
-          com eficiência, organização e confiança.
+      {/* COMO FUNCIONA */}
+      <section id="como-funciona" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-14 md:py-16">
+        <h2 className="text-center text-2xl font-extrabold tracking-tight text-brand-950 md:text-3xl">Como funciona</h2>
+        <p className="mx-auto mt-3 max-w-2xl text-center text-slate-600">
+          Do fim do curso ao certificado no telemóvel do formando, sem papel e sem deslocações.
         </p>
+        <ol className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {STEPS.map((s, i) => (
+            <li key={s.t} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-card">
+              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-900 text-sm font-bold text-white">
+                {i + 1}
+              </span>
+              <p className="mt-4 text-lg font-bold text-brand-950">{s.t}</p>
+              <p className="mt-1 text-[15px] leading-relaxed text-slate-600">{s.d}</p>
+            </li>
+          ))}
+        </ol>
       </section>
 
-      {/* PORQUÊ */}
-      <section className="border-t border-slate-100 bg-slate-50/70">
+      {/* VANTAGENS */}
+      <section id="vantagens" className="scroll-mt-20 border-t border-slate-100 bg-slate-50/70">
         <div className="mx-auto max-w-6xl px-4 py-14">
           <h2 className="text-center text-2xl font-extrabold tracking-tight text-brand-950 md:text-3xl">
-            Por Que Escolher a Microlegal?
+            Porquê o {BRAND.nome}?
           </h2>
           <div className="mt-10 grid gap-8 md:grid-cols-3">
             {WHY.map((w) => (
@@ -138,25 +160,14 @@ export function HomePage() {
 
       {/* FUNCIONALIDADES */}
       <section id="funcionalidades" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-14 md:py-16">
-        <h2 className="text-center text-2xl font-extrabold tracking-tight text-brand-950 md:text-3xl">
-          Funcionalidades
-        </h2>
+        <h2 className="text-center text-2xl font-extrabold tracking-tight text-brand-950 md:text-3xl">Funcionalidades</h2>
         <p className="mx-auto mt-3 max-w-2xl text-center text-slate-600">
-          Explore o que a plataforma oferece - e o que está a caminho.
+          Tudo o que precisa para certificar formações, num só lugar.
         </p>
-        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {FEATURES.map((f) => (
             <div key={f.t} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-card">
-              <div className="flex items-center justify-between">
-                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-brand-900">
-                  {f.icon}
-                </span>
-                {f.soon && (
-                  <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800">
-                    Em breve
-                  </span>
-                )}
-              </div>
+              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-brand-900">{f.icon}</span>
               <p className="mt-4 text-lg font-bold text-brand-950">{f.t}</p>
               <p className="mt-1 text-[15px] leading-relaxed text-slate-600">{f.d}</p>
             </div>
@@ -165,23 +176,23 @@ export function HomePage() {
       </section>
 
       {/* PREÇOS */}
-      <section className="border-y border-slate-100 bg-slate-50/70">
+      <section id="precos" className="scroll-mt-20 border-y border-slate-100 bg-slate-50/70">
         <div className="mx-auto max-w-6xl px-4 py-14">
-          <h2 className="text-center text-2xl font-extrabold tracking-tight text-brand-950 md:text-3xl">
-            Preços
-          </h2>
-          <p className="mt-3 text-center text-sm text-slate-500">
-            Valores de referência - sem cobranças nesta fase.
+          <h2 className="text-center text-2xl font-extrabold tracking-tight text-brand-950 md:text-3xl">Preços</h2>
+          <p className="mt-3 text-center text-slate-600">
+            Gratuito para a instituição. Cada formando paga o seu certificado por M-Pesa ou e-Mola.
           </p>
           <div className="mx-auto mt-8 grid max-w-3xl gap-4 md:grid-cols-2">
             <div className="rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-card">
-              <p className="font-bold text-brand-950">Certificado de Participação</p>
+              <FileBadge size={22} className="mx-auto text-brand-900" />
+              <p className="mt-3 font-bold text-brand-950">Certificado de Participação</p>
               <p className="mt-1 text-sm text-slate-500">Workshops, seminários e eventos</p>
               <p className="mt-4 text-3xl font-extrabold text-brand-950">100 MT</p>
             </div>
             <div className="rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-card">
-              <p className="font-bold text-brand-950">Certificado Técnico-Profissional</p>
-              <p className="mt-1 text-sm text-slate-500">Formações com avaliação</p>
+              <GraduationCap size={22} className="mx-auto text-brand-900" />
+              <p className="mt-3 font-bold text-brand-950">Certificado Técnico-Profissional</p>
+              <p className="mt-1 text-sm text-slate-500">Formações com avaliação e nota final</p>
               <p className="mt-4 text-3xl font-extrabold text-brand-950">150 MT</p>
             </div>
           </div>
@@ -193,12 +204,11 @@ export function HomePage() {
         <div className="grid items-center gap-8 md:grid-cols-2">
           <div>
             <h2 className="text-2xl font-extrabold tracking-tight text-brand-950 md:text-3xl">
-              Sobre a plataforma
+              Sobre o <BrandName suffixClass="text-emerald-600" />
             </h2>
             <p className="mt-4 leading-relaxed text-slate-600">
-              A Microlegal está a construir a forma mais simples de emitir e
-              validar certificados de formação em Moçambique: sem papel,
-              sem deslocações e sem dúvidas sobre autenticidade.
+              O {BRAND.nome} é a forma mais simples de emitir e validar certificados de formação em Moçambique: sem
+              papel, sem deslocações e sem dúvidas sobre autenticidade.
             </p>
             <ul className="mt-5 space-y-2 text-[15px] text-slate-600">
               <li><strong className="text-brand-950">Missão:</strong> simplificar a certificação de formações.</li>
@@ -210,21 +220,21 @@ export function HomePage() {
             <p className="text-sm font-bold uppercase tracking-widest text-emerald-400">Contacto</p>
             <p className="mt-3 text-lg font-bold">Fale connosco</p>
             <ul className="mt-3 space-y-1.5 text-[15px] text-slate-300">
-              <li>geral@microlegal.co.mz</li>
-              <li>+258 84 000 0000</li>
-              <li>Maputo, Moçambique</li>
+              <li>
+                <a href={`mailto:${BRAND.email}`} className="hover:text-white">{BRAND.email}</a>
+              </li>
+              <li>{BRAND.telefone}</li>
+              <li>{BRAND.local}</li>
             </ul>
             <Link to="/registo" className="mt-6 inline-flex">
-              <Button className="rounded-lg bg-emerald-600 px-6 hover:bg-emerald-500">
-                Criar conta grátis
-              </Button>
+              <Button className="rounded-lg bg-emerald-600 px-6 hover:bg-emerald-500">Criar conta grátis</Button>
             </Link>
           </div>
         </div>
       </section>
 
       {/* FAQ */}
-      <section id="faq" className="border-t border-slate-100">
+      <section id="faq" className="scroll-mt-20 border-t border-slate-100">
         <div className="mx-auto max-w-3xl px-4 py-14">
           <h2 className="text-center text-2xl font-extrabold tracking-tight text-brand-950 md:text-3xl">
             Perguntas Frequentes

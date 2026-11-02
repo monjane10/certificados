@@ -1,8 +1,8 @@
 {
-  "name": "microlegal-certificados",
+  "name": "diploma-mz",
   "version": "0.1.0",
   "private": true,
-  "description": "Plataforma de Gestão e Emissão de Certificados Digitais - Microlegal (Sprint 1)",
+  "description": "Plataforma de Gestão e Emissão de Certificados Digitais - Diploma.mz",
   "scripts": {
     "dev": "concurrently --names backend,frontend --prefix-colors blue,green \"npm run dev:backend\" \"npm run dev:frontend\"",
     "dev:frontend": "npm --prefix frontend run dev",

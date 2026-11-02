@@ -3,6 +3,7 @@ import { Award, Menu, X } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Button } from '../ui/Button';
+import { BrandName } from './BrandName';
 
 export function Navbar() {
   const [open, setOpen] = useState(false);
@@ -18,12 +19,13 @@ export function Navbar() {
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-900 text-white">
             <Award size={20} />
           </span>
-          <span className="text-lg font-extrabold tracking-tight text-brand-950">Microlegal</span>
+          <BrandName className="text-lg font-extrabold tracking-tight text-brand-950" />
         </Link>
         <nav className="hidden items-center gap-6 text-sm font-medium text-slate-600 md:flex">
           <Link to="/" className="hover:text-brand-900">Início</Link>
+          <a href="/#como-funciona" className="hover:text-brand-900">Como funciona</a>
           <a href="/#vantagens" className="hover:text-brand-900">Vantagens</a>
-          <a href="/#certificados" className="hover:text-brand-900">Certificados</a>
+          <a href="/#precos" className="hover:text-brand-900">Preços</a>
           <Link to="/verificar" className="hover:text-brand-900">Verificar</Link>
           <a href="/#faq" className="hover:text-brand-900">FAQ</a>
         </nav>
